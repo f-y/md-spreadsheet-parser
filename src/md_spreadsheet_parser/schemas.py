@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, TypedDict
+
 
 @dataclass(frozen=True)
 class ParsingSchema:
@@ -7,58 +8,65 @@ class ParsingSchema:
     Configuration for parsing markdown tables.
     Designed to be immutable and passed to pure functions.
     """
+
     column_separator: str = "|"
     header_separator_char: str = "-"
     require_outer_pipes: bool = False
     strip_whitespace: bool = True
-    
+
     # Future extensibility:
-    # quote_char: Optional[str] = None
-    # escape_char: Optional[str] = "\\"
+    # quote_char: str | None = None
+    # escape_char: str | None = "\\"
+
 
 @dataclass(frozen=True)
 class ParseResult:
     """
     Structured result of the parsing operation.
     """
-    headers: Optional[List[str]]
-    rows: List[List[str]]
-    metadata: Dict[str, Any]
 
+    headers: list[str] | None
+    rows: list[list[str]]
+    metadata: dict[str, Any]
 
 
 # Default schema for standard Markdown tables (GFM style)
 DEFAULT_SCHEMA = ParsingSchema()
 
+
 class TableJSON(TypedDict):
-    name: Optional[str]
-    description: Optional[str]
-    headers: Optional[List[str]]
-    rows: List[List[str]]
-    metadata: Dict[str, Any]
+    name: str | None
+    description: str | None
+    headers: list[str] | None
+    rows: list[list[str]]
+    metadata: dict[str, Any]
+
 
 class SheetJSON(TypedDict):
     name: str
-    tables: List[TableJSON]
+    tables: list[TableJSON]
+
 
 class WorkbookJSON(TypedDict):
-    sheets: List[SheetJSON]
+    sheets: list[SheetJSON]
+
 
 @dataclass(frozen=True)
 class Table:
     """
     Represents a parsed table with optional metadata.
     """
-    headers: Optional[List[str]]
-    rows: List[List[str]]
-    name: Optional[str] = None
-    description: Optional[str] = None
-    metadata: Dict[str, Any] = None
+
+    headers: list[str] | None
+    rows: list[list[str]]
+    name: str | None = None
+    description: str | None = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.metadata is None:
             # Hack to allow default value for mutable type in frozen dataclass
-            object.__setattr__(self, 'metadata', {})
+            object.__setattr__(self, "metadata", {})
 
     @property
     def json(self) -> TableJSON:
@@ -67,25 +75,24 @@ class Table:
             "description": self.description,
             "headers": self.headers,
             "rows": self.rows,
-            "metadata": self.metadata
+            "metadata": self.metadata if self.metadata is not None else {},
         }
+
 
 @dataclass(frozen=True)
 class Sheet:
     """
     Represents a single sheet containing tables.
     """
+
     name: str
-    tables: List[Table]
+    tables: list[Table]
 
     @property
     def json(self) -> SheetJSON:
-        return {
-            "name": self.name,
-            "tables": [t.json for t in self.tables]
-        }
+        return {"name": self.name, "tables": [t.json for t in self.tables]}
 
-    def get_table(self, name: str) -> Optional[Table]:
+    def get_table(self, name: str) -> Table | None:
         """
         Retrieve a table by its name. Returns None if not found.
         """
@@ -94,20 +101,20 @@ class Sheet:
                 return table
         return None
 
+
 @dataclass(frozen=True)
 class Workbook:
     """
     Represents a collection of sheets (multi-table output).
     """
-    sheets: List[Sheet]
+
+    sheets: list[Sheet]
 
     @property
     def json(self) -> WorkbookJSON:
-        return {
-            "sheets": [s.json for s in self.sheets]
-        }
+        return {"sheets": [s.json for s in self.sheets]}
 
-    def get_sheet(self, name: str) -> Optional[Sheet]:
+    def get_sheet(self, name: str) -> Sheet | None:
         """
         Retrieve a sheet by its name. Returns None if not found.
         """
@@ -116,14 +123,14 @@ class Workbook:
                 return sheet
         return None
 
+
 @dataclass(frozen=True)
 class MultiTableParsingSchema(ParsingSchema):
     """
     Configuration for parsing multiple tables (workbook mode).
     """
+
     root_marker: str = "# Tables"
     sheet_header_level: int = 2  # e.g. ## SheetName
-    table_header_level: Optional[int] = None  # e.g. ### TableName
+    table_header_level: int | None = None  # e.g. ### TableName
     capture_description: bool = False
-
-
