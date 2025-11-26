@@ -378,6 +378,18 @@ table_data = workbook.sheets[0].tables[0].json
 df = pd.DataFrame(table_data["rows"], columns=table_data["headers"])
 ```
 
+## Future Roadmap
+
+We plan to extend the library to support **Visual Metadata** for better integration with rich Markdown editors.
+
+### Visual Metadata Integration
+Future versions will support parsing and generating metadata that controls the visual presentation of tables in an editor UI, such as:
+- **Column Widths**: Persisting user-adjusted column widths.
+- **Conditional Formatting**: Highlighting cells based on values.
+- **Data Types**: Explicitly defining column types (e.g., currency, date) for better editor UX.
+
+This metadata will be embedded in the Markdown file in a way that remains invisible or unobtrusive in standard Markdown viewers (e.g., using HTML comments or specific metadata blocks), ensuring compatibility while enabling rich editing experiences.
+
 ## License
 
 MIT
