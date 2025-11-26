@@ -2,10 +2,12 @@ import re
 from .schemas import (
     ParsingSchema,
     DEFAULT_SCHEMA,
-    Sheet,
-    Workbook,
     MultiTableParsingSchema,
+)
+from .models import (
+    Sheet,
     Table,
+    Workbook,
 )
 
 

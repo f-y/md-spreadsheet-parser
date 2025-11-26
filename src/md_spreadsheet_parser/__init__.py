@@ -1,13 +1,11 @@
 from .core import parse_table, parse_sheet, parse_workbook, scan_tables
-from .schemas import (
-    ParsingSchema,
-    DEFAULT_SCHEMA,
+from .schemas import ParsingSchema, DEFAULT_SCHEMA, MultiTableParsingSchema
+from .models import (
+    Table,
     Sheet,
     Workbook,
-    MultiTableParsingSchema,
-    Table,
-    TableValidationError,
 )
+from .validation import TableValidationError
 
 __all__ = [
     "parse_table",
