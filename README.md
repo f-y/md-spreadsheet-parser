@@ -298,28 +298,6 @@ users_sheet = workbook.get_sheet("Users")
 products_sheet = workbook.get_sheet("Products")
 ```
 
-#### Scanning for Tables
-
-Extract all tables from a document, regardless of structure.
-
-```python
-from md_spreadsheet_parser import scan_tables
-
-markdown = """
-Here is a list of users:
-| Name |
-|---|
-| Alice |
-
-And some other data:
-| ID |
-|---|
-| 1 |
-"""
-
-tables = scan_tables(markdown)
-print(len(tables)) # 2
-```
 
 ### 5. Robustness (Handling Malformed Tables)
 
@@ -348,7 +326,7 @@ Customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
 |---|---|---|
 | `column_separator` | `\|` | Character used to separate columns. |
 | `header_separator_char` | `-` | Character used in the separator row. |
-| `require_outer_pipes` | `False` | If `True`, generated markdown tables will include outer pipes (e.g. `\| col \|`). Does not affect parsing. |
+| `require_outer_pipes` | `True` | If `True`, generated markdown tables will include outer pipes (e.g. `\| col \|`). Does not affect parsing. |
 | `strip_whitespace` | `True` | If `True`, whitespace is stripped from cell values. |
 | `root_marker` | `# Tables` | (MultiTable) Marker indicating start of data section. |
 | `sheet_header_level` | `2` | (MultiTable) Header level for sheets (e.g. `## Sheet`). |

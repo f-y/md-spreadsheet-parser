@@ -10,13 +10,13 @@ class ParsingSchema:
     Attributes:
         column_separator (str): Character used to separate columns. Defaults to "|".
         header_separator_char (str): Character used in the separator row. Defaults to "-".
-        require_outer_pipes (bool): Whether tables must have outer pipes (e.g. `| col |`). Defaults to False.
+        require_outer_pipes (bool): Whether tables must have outer pipes (e.g. `| col |`). Defaults to True.
         strip_whitespace (bool): Whether to strip whitespace from cell values. Defaults to True.
     """
 
     column_separator: str = "|"
     header_separator_char: str = "-"
-    require_outer_pipes: bool = False
+    require_outer_pipes: bool = True
     strip_whitespace: bool = True
 
 

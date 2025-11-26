@@ -114,3 +114,16 @@ def test_workbook_to_markdown():
 | 2 |"""
 
     assert markdown.strip() == expected.strip()
+
+
+def test_table_to_markdown_default_schema():
+    table = Table(headers=["A"], rows=[["1"]])
+    # Default schema should now have require_outer_pipes=True
+    schema = ParsingSchema()
+    markdown = table.to_markdown(schema)
+
+    expected = """| A |
+| --- |
+| 1 |"""
+
+    assert markdown.strip() == expected.strip()
