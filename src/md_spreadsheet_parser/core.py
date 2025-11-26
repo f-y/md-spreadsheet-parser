@@ -1,124 +1,102 @@
 import re
-from .schemas import (
-    ParsingSchema,
-    DEFAULT_SCHEMA,
-    MultiTableParsingSchema,
-)
-from .models import (
-    Sheet,
-    Table,
-    Workbook,
-)
+from dataclasses import replace
+
+from .models import Table, Workbook, Sheet
+from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA
 
 
-def clean_cell(cell_content: str, schema: ParsingSchema) -> str:
+def clean_cell(cell: str, schema: ParsingSchema) -> str:
     """
-    Cleans a single cell content based on the schema.
-
-    Args:
-        cell_content (str): The raw content of the cell.
-        schema (ParsingSchema): The schema configuration.
-
-    Returns:
-        str: The cleaned cell content.
+    Clean a cell value by stripping whitespace and unescaping the separator.
     """
     if schema.strip_whitespace:
-        return cell_content.strip()
-    return cell_content
+        cell = cell.strip()
+
+    # Unescape the column separator (e.g. \| -> |)
+    # We also need to handle \\ -> \
+    # Simple replacement for now: replace \<sep> with <sep>
+    if "\\" in cell:
+        cell = cell.replace(f"\\{schema.column_separator}", schema.column_separator)
+
+    return cell
 
 
-def parse_row(line: str, schema: ParsingSchema) -> list[str]:
+def parse_row(line: str, schema: ParsingSchema) -> list[str] | None:
     """
-    Parses a single line into a list of cell values.
-
-    Args:
-        line (str): The raw line string.
-        schema (ParsingSchema): The schema configuration.
-
-    Returns:
-        list[str]: A list of cell values.
+    Parse a single line into a list of cell values.
+    Handles escaped separators.
     """
-    parts = line.split(schema.column_separator)
+    line = line.strip()
+    if not line:
+        return None
 
-    if not parts:
-        return []
+    # Use regex to split by separator, but ignore escaped separators.
+    # Pattern: (?<!\\)SEPARATOR
+    # We must escape the separator itself for regex usage.
+    sep_pattern = re.escape(schema.column_separator)
+    pattern = f"(?<!\\\\){sep_pattern}"
 
-    start_idx = 0
-    end_idx = len(parts)
+    parts = re.split(pattern, line)
 
-    if parts and parts[0].strip() == "":
-        start_idx = 1
+    # Handle outer pipes if present
+    # If the line starts/ends with a separator (and it wasn't escaped),
+    # split will produce empty strings at start/end.
+    if len(parts) > 1:
+        if parts[0].strip() == "":
+            parts = parts[1:]
+        if parts and parts[-1].strip() == "":
+            parts = parts[:-1]
 
-    if parts and len(parts) > 1 and parts[-1].strip() == "":
-        end_idx = -1
-
-    cleaned_parts = parts[start_idx:end_idx]
-
-    return [clean_cell(p, schema) for p in cleaned_parts]
+    # Clean cells
+    cleaned_parts = [clean_cell(part, schema) for part in parts]
+    return cleaned_parts
 
 
-def is_separator_row(row_cells: list[str], schema: ParsingSchema) -> bool:
+def is_separator_row(row: list[str], schema: ParsingSchema) -> bool:
     """
-    Determines if a parsed row is a header separator row (e.g. `---|---`).
-
-    Args:
-        row_cells (list[str]): The list of cell values in the row.
-        schema (ParsingSchema): The schema configuration.
-
-    Returns:
-        bool: True if the row is a separator row, False otherwise.
+    Check if a row is a separator row (e.g. |---|---|).
     """
-    if not row_cells:
-        return False
-
-    for cell in row_cells:
-        content = cell.strip()
-        if not content:
-            continue
-
-        valid_chars = set(schema.header_separator_char + ": ")
-        if not set(content).issubset(valid_chars):
+    # A separator row typically contains only hyphens, colons, and spaces.
+    # It must have at least one hyphen.
+    for cell in row:
+        # Remove expected chars
+        cleaned = (
+            cell.replace(schema.header_separator_char, "").replace(":", "").strip()
+        )
+        if cleaned:
             return False
-
-        if schema.header_separator_char not in content:
+        # Must contain at least one separator char (usually '-')
+        if schema.header_separator_char not in cell:
             return False
-
     return True
 
 
-def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
+def parse_table(markdown: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
     """
-    Parses a single block of text into a table.
+    Parse a markdown table into a Table object.
 
     Args:
-        text (str): The markdown text containing the table.
-        schema (ParsingSchema, optional): The parsing configuration. Defaults to DEFAULT_SCHEMA.
+        markdown: The markdown string containing the table.
+        schema: Configuration for parsing.
 
     Returns:
-        Table: The parsed table result containing headers, rows, and metadata.
-
-    Example:
-        ```python
-        markdown = "| A | B |\\n|---|---|\\n| 1 | 2 |"
-        result = parse_table(markdown)
-        print(result.headers) # ['A', 'B']
-        ```
+        Table object with headers and rows.
     """
-    lines = text.strip().split("\n")
-
+    lines = markdown.strip().split("\n")
     headers: list[str] | None = None
     rows: list[list[str]] = []
 
+    # Buffer for potential header row until we confirm it's a header with a separator
     potential_header: list[str] | None = None
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if not line:
             continue
 
         parsed_row = parse_row(line, schema)
 
-        if not parsed_row:
+        if parsed_row is None:
             continue
 
         if headers is None and potential_header is not None:
@@ -127,6 +105,7 @@ def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
                 potential_header = None
                 continue
             else:
+                # Previous row was not a header, treat as data
                 rows.append(potential_header)
                 potential_header = parsed_row
         elif headers is None and potential_header is None:
@@ -154,159 +133,119 @@ def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
     return Table(headers=headers, rows=rows, metadata={"schema_used": str(schema)})
 
 
-def _extract_tables(text: str, schema: ParsingSchema) -> list[Table]:
+def _extract_tables(text: str, schema: MultiTableParsingSchema) -> list[Table]:
     """
-    Helper function to extract tables from text based on schema configuration.
-    Handles both header-based splitting (if table_header_level is set) and blank-line splitting.
-    Internal use only.
+    Extract tables from text.
+    If table_header_level is set, splits by that header.
+    Otherwise, splits by blank lines.
     """
     tables: list[Table] = []
 
-    # Check for MultiTableParsingSchema features
-    table_header_level = getattr(schema, "table_header_level", None)
-    capture_description = getattr(schema, "capture_description", False)
-
-    if table_header_level is not None:
+    if schema.table_header_level is not None:
         # Split by table header
-        header_prefix = "#" * table_header_level + " "
-
+        header_prefix = "#" * schema.table_header_level + " "
         lines = text.split("\n")
-        current_table_name: str | None = None
+
         current_table_lines: list[str] = []
+        current_table_name: str | None = None
+        current_description_lines: list[str] = []
 
-        def process_table_block(t_name: str, t_lines: list[str]):
-            if not t_lines:
-                return
-
-            block_content = "\n".join(t_lines)
-            description = None
-            table_content = block_content
-
-            if capture_description:
-                # Find start of table (first line with pipe)
-                block_lines = block_content.split("\n")
+        def process_table_block():
+            if current_table_name and current_table_lines:
+                # Try to separate description from table content
+                # Simple heuristic: find the first line that looks like a table row
                 table_start_idx = -1
-                for idx, line in enumerate(block_lines):
+                for idx, line in enumerate(current_table_lines):
                     if schema.column_separator in line:
                         table_start_idx = idx
                         break
 
-                if table_start_idx > 0:
-                    description = "\n".join(block_lines[:table_start_idx]).strip()
-                    if not description:
-                        description = None
-                    table_content = "\n".join(block_lines[table_start_idx:])
-                elif table_start_idx == 0:
-                    description = None
-                    table_content = block_content
-                else:
-                    # No table found
-                    return
-
-            parse_res = parse_table(table_content, schema)
-            if parse_res.headers or parse_res.rows:
-                tables.append(
-                    Table(
-                        name=t_name,
-                        description=description,
-                        headers=parse_res.headers,
-                        rows=parse_res.rows,
-                        metadata=parse_res.metadata,
+                if table_start_idx != -1:
+                    # Description is everything before table start
+                    desc_lines = (
+                        current_description_lines
+                        + current_table_lines[:table_start_idx]
                     )
-                )
+                    table_content = "\n".join(current_table_lines[table_start_idx:])
+
+                    description = (
+                        "\n".join(line.strip() for line in desc_lines if line.strip())
+                        if schema.capture_description
+                        else None
+                    )
+                    if description == "":
+                        description = None
+
+                    table = parse_table(table_content, schema)
+                    table = replace(
+                        table, name=current_table_name, description=description
+                    )
+                    tables.append(table)
 
         for line in lines:
             stripped = line.strip()
             if stripped.startswith(header_prefix):
-                if current_table_name is not None:
-                    process_table_block(current_table_name, current_table_lines)
-
+                process_table_block()
                 current_table_name = stripped[len(header_prefix) :].strip()
                 current_table_lines = []
+                current_description_lines = []
             else:
                 if current_table_name is not None:
                     current_table_lines.append(line)
 
-        if current_table_name is not None:
-            process_table_block(current_table_name, current_table_lines)
+        process_table_block()
 
     else:
-        # Legacy behavior: Split by blank lines
-        blocks = re.split(r"\n\s*\n", text.strip())
-
+        # Legacy/Simple mode: Split by blank lines, try to parse each block
+        blocks = text.split("\n\n")
         for block in blocks:
             if not block.strip():
                 continue
-
+            # Heuristic: must contain separator
             if schema.column_separator in block:
-                parse_res = parse_table(block, schema)
-                if parse_res.headers or parse_res.rows:
-                    tables.append(
-                        Table(
-                            name=None,
-                            description=None,
-                            headers=parse_res.headers,
-                            rows=parse_res.rows,
-                            metadata=parse_res.metadata,
-                        )
-                    )
+                table = parse_table(block, schema)
+                if table.rows or table.headers:
+                    tables.append(table)
+
     return tables
 
 
-def parse_sheet(text: str, name: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Sheet:
+def parse_sheet(markdown: str, name: str, schema: MultiTableParsingSchema) -> Sheet:
     """
-    Parses a sheet content which may contain multiple tables.
-    Supports splitting by table headers and extracting descriptions if configured in schema.
-
-    Args:
-        text (str): The content of the sheet.
-        name (str): The name of the sheet.
-        schema (ParsingSchema, optional): The parsing configuration. Defaults to DEFAULT_SCHEMA.
-
-    Returns:
-        Sheet: A Sheet object containing the parsed tables.
+    Parse a sheet (section) containing one or more tables.
     """
-    tables = _extract_tables(text, schema)
+    tables = _extract_tables(markdown, schema)
     return Sheet(name=name, tables=tables)
 
 
-def parse_workbook(text: str, schema: MultiTableParsingSchema) -> Workbook:
+def parse_workbook(
+    markdown: str, schema: MultiTableParsingSchema = MultiTableParsingSchema()
+) -> Workbook:
     """
-    Parses a full workbook text containing multiple sheets.
-    Strictly requires the root_marker to be present. Content before the marker is ignored.
-
-    Args:
-        text (str): The full markdown text of the workbook.
-        schema (MultiTableParsingSchema): The schema configuration including root marker and header levels.
-
-    Returns:
-        Workbook: A Workbook object containing the parsed sheets.
-
-    Example:
-        ```python
-        markdown = "# Tables\\n## Sheet1\\n| A | B |\\n|---|---|\\n| 1 | 2 |"
-        schema = MultiTableParsingSchema()
-        workbook = parse_workbook(markdown, schema)
-        print(workbook.sheets[0].name) # 'Sheet1'
-        ```
+    Parse a markdown document into a Workbook.
     """
-    # Find the root marker
-    marker_index = text.find(schema.root_marker)
-    if marker_index == -1:
-        return Workbook(sheets=[])
-
-    content_start = marker_index + len(schema.root_marker)
-    content = text[content_start:]
-
-    lines = content.split("\n")
-
+    lines = markdown.split("\n")
     sheets: list[Sheet] = []
+
+    # Find root marker
+    start_index = 0
+    if schema.root_marker:
+        found = False
+        for i, line in enumerate(lines):
+            if line.strip() == schema.root_marker:
+                start_index = i + 1
+                found = True
+                break
+        if not found:
+            return Workbook(sheets=[])
+
+    # Split by sheet headers
+    header_prefix = "#" * schema.sheet_header_level + " "
+
     current_sheet_name: str | None = None
     current_sheet_lines: list[str] = []
 
-    header_prefix = "#" * schema.sheet_header_level + " "
-
-    for line in lines:
+    for line in lines[start_index:]:
         stripped = line.strip()
 
         # Check if line is a header
@@ -342,24 +281,20 @@ def parse_workbook(text: str, schema: MultiTableParsingSchema) -> Workbook:
     return Workbook(sheets=sheets)
 
 
-def scan_tables(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> list[Table]:
+def scan_tables(
+    markdown: str, schema: MultiTableParsingSchema | None = None
+) -> list[Table]:
     """
-    Scans the entire text for tables.
-    If schema is configured with `table_header_level`, it attempts to extract named tables and descriptions.
-    Otherwise, it ignores hierarchy and headers, returning a flat list of all found tables.
+    Scan a markdown document for all tables, ignoring sheet structure.
 
     Args:
-        text (str): The markdown text to scan.
-        schema (ParsingSchema, optional): The parsing configuration. Defaults to DEFAULT_SCHEMA.
+        markdown: The markdown text.
+        schema: Optional schema. If None, uses default MultiTableParsingSchema.
 
     Returns:
-        list[Table]: A list of all found Table objects.
-
-    Example:
-        ```python
-        markdown = "Some text...\\n| A | B |\\n|---|---|\\n| 1 | 2 |"
-        tables = scan_tables(markdown)
-        print(len(tables)) # 1
-        ```
+        List of found Table objects.
     """
-    return _extract_tables(text, schema)
+    if schema is None:
+        schema = MultiTableParsingSchema()
+
+    return _extract_tables(markdown, schema)

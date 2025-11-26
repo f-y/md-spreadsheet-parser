@@ -1,8 +1,13 @@
-from typing import Any
+from typing import TYPE_CHECKING
 from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA
 
+if TYPE_CHECKING:
+    from .models import Table, Sheet, Workbook
 
-def generate_table_markdown(table: Any, schema: ParsingSchema = DEFAULT_SCHEMA) -> str:
+
+def generate_table_markdown(
+    table: "Table", schema: ParsingSchema = DEFAULT_SCHEMA
+) -> str:
     """
     Generates a Markdown string representation of the table.
 
@@ -58,7 +63,9 @@ def generate_table_markdown(table: Any, schema: ParsingSchema = DEFAULT_SCHEMA) 
     return "\n".join(lines)
 
 
-def generate_sheet_markdown(sheet: Any, schema: ParsingSchema = DEFAULT_SCHEMA) -> str:
+def generate_sheet_markdown(
+    sheet: "Sheet", schema: ParsingSchema = DEFAULT_SCHEMA
+) -> str:
     """
     Generates a Markdown string representation of the sheet.
 
@@ -83,7 +90,9 @@ def generate_sheet_markdown(sheet: Any, schema: ParsingSchema = DEFAULT_SCHEMA) 
     return "\n".join(lines)
 
 
-def generate_workbook_markdown(workbook: Any, schema: MultiTableParsingSchema) -> str:
+def generate_workbook_markdown(
+    workbook: "Workbook", schema: MultiTableParsingSchema
+) -> str:
     """
     Generates a Markdown string representation of the workbook.
 

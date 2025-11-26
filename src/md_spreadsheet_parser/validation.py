@@ -1,5 +1,9 @@
+import types
 from dataclasses import fields, is_dataclass
-from typing import Any, Type, TypeVar, get_origin, get_args, Union
+from typing import Any, Type, TypeVar, get_origin, get_args, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import Table
 
 T = TypeVar("T")
 
@@ -34,16 +38,23 @@ def _convert_value(value: str, target_type: Type) -> Any:
     args = get_args(target_type)
 
     # Handle Optional[T] (Union[T, None])
-    # In Python 3.10+, X | Y is types.UnionType, not typing.Union
-    is_union = origin is Union or str(origin) == "<class 'types.UnionType'>"
+    # Note: typing.Union is not types.UnionType. We check origin against both if needed.
+    # Actually get_origin(Union[int, None]) returns typing.Union.
+    # get_origin(int | None) returns types.UnionType.
 
-    if is_union and type(None) in args:
-        if not value.strip():
-            return None
-        # Find the non-None type
-        for arg in args:
-            if arg is not type(None):
-                return _convert_value(value, arg)
+    # We need to handle both typing.Union and types.UnionType (for | syntax)
+    # Since we don't import Union from typing, we can check string representation or just use the fact that
+    # get_origin returns the class.
+
+    # Robust check for Union-like types
+    if origin is not None and (origin is types.UnionType or "Union" in str(origin)):
+        if type(None) in args:
+            if not value.strip():
+                return None
+            # Find the non-None type
+            for arg in args:
+                if arg is not type(None):
+                    return _convert_value(value, arg)
 
     # Handle basic types
     if target_type is int:
@@ -71,13 +82,12 @@ def _convert_value(value: str, target_type: Type) -> Any:
     return value
 
 
-def validate_table(table: Any, schema_cls: Type[T]) -> list[T]:
+def validate_table(table: "Table", schema_cls: Type[T]) -> list[T]:
     """
     Validates a Table object against a dataclass schema.
 
     Args:
-        table: The Table object to validate (avoiding circular import by using Any,
-               but expected to be md_spreadsheet_parser.models.Table).
+        table: The Table object to validate.
         schema_cls: The dataclass type to validate against.
 
     Returns:
