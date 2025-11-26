@@ -2,6 +2,14 @@
 
 Thank you for your interest in contributing to `md-spreadsheet-parser`! We welcome contributions from everyone.
 
+## Language / 言語
+
+The maintainer (@f-y) is a native Japanese speaker. Issues and Pull Requests in Japanese are welcomed.
+Of course, English is also perfectly fine.
+
+メンテナ（@f-y）は日本人です。日本語でのIssue報告やPull Requestも歓迎します。
+もちろん、英語でのやり取りも問題ありません。
+
 ## Getting Started
 
 To start developing, please refer to our [Developer Guide](DEVELOPMENT.md) for instructions on setting up your environment, running tests, and building the project.
