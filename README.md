@@ -20,7 +20,28 @@ pip install md-spreadsheet-parser
 
 ## Usage
 
-### 1. Basic Parsing
+### Command Line Interface (CLI)
+
+You can use the `md-spreadsheet-parser` command to parse Markdown files and output JSON. This is useful for piping data to other tools.
+
+```bash
+# Read from file
+md-spreadsheet-parser input.md
+
+# Read from stdin (pipe)
+cat input.md | md-spreadsheet-parser
+```
+
+**Options:**
+- `--scan`: Scan for all tables ignoring workbook structure (returns a list of tables).
+- `--root-marker`: Set the root marker (default: `# Tables`).
+- `--sheet-header-level`: Set sheet header level (default: 2).
+- `--table-header-level`: Set table header level (default: None).
+- `--capture-description`: Capture table descriptions (requires `--table-header-level`).
+
+### Python API
+
+#### 1. Basic Parsing
 
 #### Single Table
 Parse a standard Markdown table into a structured object.
