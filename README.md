@@ -203,86 +203,54 @@ Introduction paragraph.
 """
 
 tables = scan_tables(markdown)
-# tables[0] -> Table with header ['Col 1']
-# tables[1] -> Table with header ['Col 2']
-```
+### 2. Type-Safe Validation (Recommended)
 
-#### JSON / Dict Export
-All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary, making it easy to serialize or pass to other libraries (like Pandas).
-
-```python
-import json
-import pandas as pd
-
-# Export to JSON
-print(json.dumps(workbook.json, indent=2))
-
-# Convert to Pandas DataFrame
-table_data = workbook.sheets[0].tables[0].json
-df = pd.DataFrame(table_data["rows"], columns=table_data["headers"])
-```
-
-#### Schema Validation (Pydantic-like)
-You can validate and convert table data into Python objects using standard `dataclasses`. This ensures type safety without external dependencies.
+The most powerful feature of this library is converting loose markdown tables into strongly-typed Python objects using `dataclasses`. This ensures your data is valid and easy to work with.
 
 ```python
 from dataclasses import dataclass
-from md_spreadsheet_parser import parse_table
+from md_spreadsheet_parser import parse_table, TableValidationError
 
 @dataclass
 class User:
-    id: int
     name: str
-    is_active: bool
-    email: str | None = None
+    age: int
+    is_active: bool = True
 
 markdown = """
-| ID | Name  | Is Active | Email          |
-| -- | ----- | --------- | -------------- |
-| 1  | Alice | true      | alice@test.com |
-| 2  | Bob   | false     |                |
+| Name | Age | Is Active |
+|---|---|---|
+| Alice | 30 | yes |
+| Bob | 25 | no |
 """
 
-# Returns a list of User objects
-users = parse_table(markdown).to_models(User)
+try:
+    # Parse and validate in one step
+    users = parse_table(markdown).to_models(User)
+    
+    for user in users:
+        print(f"{user.name} is {user.age} years old.")
+        # Alice is 30 years old.
+        # Bob is 25 years old.
 
-print(users[0].id)        # 1 (int)
-print(users[0].is_active) # True (bool)
-print(users[1].email)     # None
+except TableValidationError as e:
+    print(e)
 ```
 
-You can also validate tables extracted from a workbook:
+**Features:**
+*   **Type Conversion**: Automatically converts strings to `int`, `float`, `bool`.
+*   **Boolean Handling**: Understands "yes/no", "on/off", "1/0", "true/false".
+*   **Optional Fields**: Handles `Optional[T]` by converting empty strings to `None`.
+*   **Validation**: Raises detailed errors if data doesn't match the schema.
 
-```python
-from md_spreadsheet_parser import parse_workbook, MultiTableParsingSchema
+### 3. Markdown Generation (Round-Trip)
 
-markdown = """
-# Data
-## Users
-| ID | Name  | Is Active |
-| -- | ----- | --------- |
-| 1  | Alice | true      |
-"""
-
-workbook = parse_workbook(markdown, MultiTableParsingSchema())
-
-# Retrieve the table and convert
-# Assuming the "Users" sheet exists and has at least one table
-sheet = workbook.get_sheet("Users")
-if sheet and sheet.tables:
-    users = sheet.tables[0].to_models(User)
-    print(users[0].name) # Alice
-```
-
-If validation fails, a `TableValidationError` is raised with detailed error messages.
-
-#### Markdown Generation
-You can convert parsed objects back into Markdown strings using `to_markdown(schema)`. This allows for programmatic modification and regeneration of Markdown tables.
+You can modify parsed objects and convert them back to Markdown strings using `to_markdown()`. This enables a complete "Parse -> Modify -> Generate" workflow.
 
 ```python
 from md_spreadsheet_parser import parse_table, ParsingSchema
 
-markdown = "| A | B |\n|---|---|\n| 1 | 2 |"
+markdown = "| A | B |\n|---|---| \n| 1 | 2 |"
 table = parse_table(markdown)
 
 # Modify data
@@ -300,7 +268,11 @@ print(table.to_markdown(schema))
 
 This works for `Table`, `Sheet`, and `Workbook` objects.
 
-**Example: Generating a Workbook**
+### 4. Advanced Parsing (Workbooks & Metadata)
+
+Handle complex markdown files with multiple tables and sections.
+
+#### Parsing a Workbook (Multiple Sheets)
 
 ```python
 from md_spreadsheet_parser import parse_workbook, MultiTableParsingSchema
@@ -308,32 +280,80 @@ from md_spreadsheet_parser import parse_workbook, MultiTableParsingSchema
 markdown = """
 # Tables
 
-## Sheet1
-| A |
-| - |
-| 1 |
-"""
-workbook = parse_workbook(markdown)
+## Users
+| Name | Age |
+|---|---|
+| Alice | 30 |
 
-# Generate Markdown for the entire workbook
-# MultiTableParsingSchema handles root markers and sheet headers
-schema = MultiTableParsingSchema(require_outer_pipes=True)
-print(workbook.to_markdown(schema))
+## Products
+| Item | Price |
+|---|---|
+| Apple | 100 |
+"""
+
+schema = MultiTableParsingSchema()
+workbook = parse_workbook(markdown, schema)
+
+users_sheet = workbook.get_sheet("Users")
+products_sheet = workbook.get_sheet("Products")
 ```
 
-### 3. Configuration (Schemas)
+#### Scanning for Tables
 
-You can customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
+Extract all tables from a document, regardless of structure.
+
+```python
+from md_spreadsheet_parser import scan_tables
+
+markdown = """
+Here is a list of users:
+| Name |
+|---|
+| Alice |
+
+And some other data:
+| ID |
+|---|
+| 1 |
+"""
+
+tables = scan_tables(markdown)
+print(len(tables)) # 2
+```
+
+### 5. Robustness (Handling Malformed Tables)
+
+The parser is designed to handle imperfect markdown tables gracefully.
+
+*   **Missing Columns**: Rows with fewer columns than the header are automatically **padded** with empty strings.
+*   **Extra Columns**: Rows with more columns than the header are automatically **truncated**.
+
+```python
+markdown = """
+| A | B |
+|---|---|
+| 1 |       <-- Missing column (padded to ["1", ""])
+| 1 | 2 | 3 <-- Extra column (truncated to ["1", "2"])
+"""
+table = parse_table(markdown)
+```
+
+This ensures that `table.rows` always matches the structure of `table.headers`, preventing crashes during iteration or validation.
+
+### 6. Configuration (Schemas)
+
+Customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
 
 | Option | Default | Description |
-| :--- | :--- | :--- |
-| `column_separator` | `\|` | Character used to separate columns. |
-| `header_separator_char` | `-` | Character used in the separator row (e.g. `---`). |
-| `strip_whitespace` | `True` | Whether to strip whitespace from cell values. |
-| `root_marker` | `# Tables` | (Multi-table only) Marker indicating start of data. |
-| `sheet_header_level` | `2` | (Multi-table only) Header level for sheets (e.g. `##`). |
-| `table_header_level` | `None` | (Multi-table only) Header level for tables. `None` disables name extraction. |
-| `capture_description` | `False` | (Multi-table only) Whether to capture text descriptions. |
+|---|---|---|
+| `column_separator` | `|` | Character used to separate columns. |
+| `header_separator_char` | `-` | Character used in the separator row. |
+| `require_outer_pipes` | `False` | If `True`, tables must have outer pipes (e.g. `| col |`). |
+| `strip_whitespace` | `True` | If `True`, whitespace is stripped from cell values. |
+| `root_marker` | `# Tables` | (MultiTable) Marker indicating start of data section. |
+| `sheet_header_level` | `2` | (MultiTable) Header level for sheets (e.g. `## Sheet`). |
+| `table_header_level` | `None` | (MultiTable) Header level for tables. |
+| `capture_description` | `False` | (MultiTable) Capture text between header and table. |
 
 ```python
 schema = MultiTableParsingSchema(
@@ -343,8 +363,20 @@ schema = MultiTableParsingSchema(
 )
 ```
 
+#### JSON / Dict Export
+All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary, making it easy to serialize or pass to other libraries (like Pandas).
 
+```python
+import json
+import pandas as pd
 
+# Export to JSON
+print(json.dumps(workbook.json, indent=2))
+
+# Convert to Pandas DataFrame
+table_data = workbook.sheets[0].tables[0].json
+df = pd.DataFrame(table_data["rows"], columns=table_data["headers"])
+```
 
 ## License
 
