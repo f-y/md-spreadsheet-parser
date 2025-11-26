@@ -227,7 +227,7 @@ You can validate and convert table data into Python objects using standard `data
 
 ```python
 from dataclasses import dataclass
-from md_spreadsheet_parser import parse_as
+from md_spreadsheet_parser import parse_table
 
 @dataclass
 class User:
@@ -244,7 +244,7 @@ markdown = """
 """
 
 # Returns a list of User objects
-users = parse_as(User, markdown)
+users = parse_table(markdown).to_models(User)
 
 print(users[0].id)        # 1 (int)
 print(users[0].is_active) # True (bool)
