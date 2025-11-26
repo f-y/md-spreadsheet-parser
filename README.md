@@ -300,6 +300,27 @@ print(table.to_markdown(schema))
 
 This works for `Table`, `Sheet`, and `Workbook` objects.
 
+**Example: Generating a Workbook**
+
+```python
+from md_spreadsheet_parser import parse_workbook, MultiTableParsingSchema
+
+markdown = """
+# Tables
+
+## Sheet1
+| A |
+| - |
+| 1 |
+"""
+workbook = parse_workbook(markdown)
+
+# Generate Markdown for the entire workbook
+# MultiTableParsingSchema handles root markers and sheet headers
+schema = MultiTableParsingSchema(require_outer_pipes=True)
+print(workbook.to_markdown(schema))
+```
+
 ### 3. Configuration (Schemas)
 
 You can customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
