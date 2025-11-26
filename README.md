@@ -276,6 +276,30 @@ if sheet and sheet.tables:
 
 If validation fails, a `TableValidationError` is raised with detailed error messages.
 
+#### Markdown Generation
+You can convert parsed objects back into Markdown strings using `to_markdown(schema)`. This allows for programmatic modification and regeneration of Markdown tables.
+
+```python
+from md_spreadsheet_parser import parse_table, ParsingSchema
+
+markdown = "| A | B |\n|---|---|\n| 1 | 2 |"
+table = parse_table(markdown)
+
+# Modify data
+table.rows.append(["3", "4"])
+
+# Generate Markdown
+# You can customize the output format using a schema
+schema = ParsingSchema(require_outer_pipes=True)
+print(table.to_markdown(schema))
+# | A | B |
+# | --- | --- |
+# | 1 | 2 |
+# | 3 | 4 |
+```
+
+This works for `Table`, `Sheet`, and `Workbook` objects.
+
 ### 3. Configuration (Schemas)
 
 You can customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.

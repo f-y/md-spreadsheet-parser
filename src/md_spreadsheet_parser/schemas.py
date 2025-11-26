@@ -94,6 +94,25 @@ class ParsingSchema:
 DEFAULT_SCHEMA = ParsingSchema()
 
 
+@dataclass(frozen=True)
+class MultiTableParsingSchema(ParsingSchema):
+    """
+    Configuration for parsing multiple tables (workbook mode).
+    Inherits from ParsingSchema.
+
+    Attributes:
+        root_marker (str): The marker indicating the start of the data section. Defaults to "# Tables".
+        sheet_header_level (int): The markdown header level for sheets. Defaults to 2 (e.g. `## Sheet`).
+        table_header_level (int | None): The markdown header level for tables. If None, table names are not extracted. Defaults to None.
+        capture_description (bool): Whether to capture text between the table header and the table as a description. Defaults to False.
+    """
+
+    root_marker: str = "# Tables"
+    sheet_header_level: int = 2
+    table_header_level: int | None = None
+    capture_description: bool = False
+
+
 class TableJSON(TypedDict):
     """
     JSON-compatible dictionary representation of a Table.
@@ -233,6 +252,60 @@ class Table:
 
         return results
 
+    def to_markdown(self, schema: ParsingSchema = DEFAULT_SCHEMA) -> str:
+        """
+        Generates a Markdown string representation of the table.
+
+        Args:
+            schema (ParsingSchema, optional): Configuration for formatting.
+
+        Returns:
+            str: The Markdown string.
+        """
+        lines = []
+
+        # Handle metadata (name and description) if MultiTableParsingSchema
+        if isinstance(schema, MultiTableParsingSchema):
+            if self.name and schema.table_header_level is not None:
+                lines.append(f"{'#' * schema.table_header_level} {self.name}")
+
+            if self.description and schema.capture_description:
+                lines.append(self.description)
+                lines.append("")  # Empty line after description
+
+        # Build table
+        sep = f" {schema.column_separator} "
+
+        # Headers
+        if self.headers:
+            # Add outer pipes if required
+            header_row = sep.join(self.headers)
+            if schema.require_outer_pipes:
+                header_row = (
+                    f"{schema.column_separator} {header_row} {schema.column_separator}"
+                )
+            lines.append(header_row)
+
+            # Separator row
+            # Simple separator: ---
+            # We could try to match column widths but for now simple is fine.
+            separator_cells = [schema.header_separator_char * 3] * len(self.headers)
+            separator_row = sep.join(separator_cells)
+            if schema.require_outer_pipes:
+                separator_row = f"{schema.column_separator} {separator_row} {schema.column_separator}"
+            lines.append(separator_row)
+
+        # Rows
+        for row in self.rows:
+            row_str = sep.join(row)
+            if schema.require_outer_pipes:
+                row_str = (
+                    f"{schema.column_separator} {row_str} {schema.column_separator}"
+                )
+            lines.append(row_str)
+
+        return "\n".join(lines)
+
 
 @dataclass(frozen=True)
 class Sheet:
@@ -272,6 +345,29 @@ class Sheet:
                 return table
         return None
 
+    def to_markdown(self, schema: ParsingSchema = DEFAULT_SCHEMA) -> str:
+        """
+        Generates a Markdown string representation of the sheet.
+
+        Args:
+            schema (ParsingSchema, optional): Configuration for formatting.
+
+        Returns:
+            str: The Markdown string.
+        """
+        lines = []
+
+        if isinstance(schema, MultiTableParsingSchema):
+            lines.append(f"{'#' * schema.sheet_header_level} {self.name}")
+            lines.append("")
+
+        for i, table in enumerate(self.tables):
+            lines.append(table.to_markdown(schema))
+            if i < len(self.tables) - 1:
+                lines.append("")  # Empty line between tables
+
+        return "\n".join(lines)
+
 
 @dataclass(frozen=True)
 class Workbook:
@@ -309,21 +405,26 @@ class Workbook:
                 return sheet
         return None
 
+    def to_markdown(self, schema: MultiTableParsingSchema) -> str:
+        """
+        Generates a Markdown string representation of the workbook.
 
-@dataclass(frozen=True)
-class MultiTableParsingSchema(ParsingSchema):
-    """
-    Configuration for parsing multiple tables (workbook mode).
-    Inherits from ParsingSchema.
+        Args:
+            schema (MultiTableParsingSchema): Configuration for formatting.
 
-    Attributes:
-        root_marker (str): The marker indicating the start of the data section. Defaults to "# Tables".
-        sheet_header_level (int): The markdown header level for sheets. Defaults to 2 (e.g. `## Sheet`).
-        table_header_level (int | None): The markdown header level for tables. If None, table names are not extracted. Defaults to None.
-        capture_description (bool): Whether to capture text between the table header and the table as a description. Defaults to False.
-    """
+        Returns:
+            str: The Markdown string.
+        """
+        lines = []
 
-    root_marker: str = "# Tables"
-    sheet_header_level: int = 2
-    table_header_level: int | None = None
-    capture_description: bool = False
+        if schema.root_marker:
+            lines.append(schema.root_marker)
+            lines.append("")
+
+        for i, sheet in enumerate(self.sheets):
+            lines.append(sheet.to_markdown(schema))
+            if i < len(self.sheets) - 1:
+                lines.append("")  # Empty line between sheets
+                lines.append("")
+
+        return "\n".join(lines)
