@@ -1,7 +1,7 @@
 # Markdown Spreadsheet Parser
 
-A lightweight, pure Python library for parsing Markdown tables into structured data.
-It provides zero-dependency parsing with support for multiple tables, configurable schemas, and JSON-friendly output.
+A robust, zero-dependency Python library for parsing, validating, and manipulating Markdown tables.
+Turn loose Markdown text into strongly-typed data structures, validate content against schemas, and generate clean Markdown output. Ideal for building spreadsheet-like interfaces, data pipelines, and automation tools.
 
 ## Features
 
