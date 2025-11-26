@@ -40,6 +40,34 @@ uv run pytest
 
 This project is typed. Ensure `py.typed` is present in the package.
 
+### Documentation
+
+This project uses `mkdocs` with `mkdocs-material` for documentation.
+
+To serve the documentation locally (auto-reloading):
+```bash
+uv run mkdocs serve
+```
+
+To build the static documentation site (outputs to `site/`):
+```bash
+uv run mkdocs build
+```
+
+### Code Style & Linting
+
+We use `ruff` for linting and formatting.
+
+To check for linting errors:
+```bash
+uv run ruff check .
+```
+
+To format code:
+```bash
+uv run ruff format .
+```
+
 ### Building the Package
 
 To create the `.whl` file for distribution (or for the VS Code extension):
