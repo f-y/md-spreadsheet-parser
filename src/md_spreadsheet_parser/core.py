@@ -294,6 +294,22 @@ def parse_workbook(text: str, schema: MultiTableParsingSchema) -> Workbook:
 
     for line in lines:
         stripped = line.strip()
+
+        # Check if line is a header
+        if stripped.startswith("#"):
+            # Count header level
+            level = 0
+            for char in stripped:
+                if char == "#":
+                    level += 1
+                else:
+                    break
+
+            # If header level is less than sheet_header_level (e.g. # vs ##),
+            # it indicates a higher-level section, so we stop parsing the workbook.
+            if level < schema.sheet_header_level:
+                break
+
         if stripped.startswith(header_prefix):
             if current_sheet_name:
                 sheet_content = "\n".join(current_sheet_lines)
