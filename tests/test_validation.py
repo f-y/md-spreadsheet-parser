@@ -1,6 +1,6 @@
 import pytest
 from dataclasses import dataclass
-from md_spreadsheet_parser.validation import parse_as, TableValidationError
+from md_spreadsheet_parser import parse_table, TableValidationError
 
 
 @dataclass
@@ -19,7 +19,9 @@ def test_basic_validation():
 | 1  | Alice | true      | 95.5  | alice@test.com |
 | 2  | Bob   | 0         | 80.0  |                |
 """
-    users = parse_as(User, markdown)
+    # Use parse_table to get a Table object, then call to_models
+    table = parse_table(markdown)
+    users = table.to_models(User)
 
     assert len(users) == 2
 
@@ -45,8 +47,9 @@ def test_validation_error_types():
 | 1  | Alice| not_bool  | 95.5  |
 | X  | Bob  | true      | 80.0  |
 """
+    table = parse_table(markdown)
     with pytest.raises(TableValidationError) as excinfo:
-        parse_as(User, markdown)
+        table.to_models(User)
 
     errors = excinfo.value.errors
     assert len(errors) == 2
@@ -64,8 +67,9 @@ def test_missing_required_field():
 | -- | ---- | --------- |
 | 1  | Alice| true      |
 """
+    table = parse_table(markdown)
     with pytest.raises(TableValidationError) as excinfo:
-        parse_as(User, markdown)
+        table.to_models(User)
 
     assert "missing 1 required positional argument: 'score'" in excinfo.value.errors[0]
 
@@ -74,8 +78,9 @@ def test_not_a_dataclass():
     class NotDataclass:
         pass
 
+    table = parse_table("| A |")
     with pytest.raises(ValueError, match="must be a dataclass"):
-        parse_as(NotDataclass, "| A |")
+        table.to_models(NotDataclass)
 
 
 def test_header_normalization():
@@ -89,6 +94,7 @@ def test_header_normalization():
 | ------- | ----------- |
 | abc     | 3           |
 """
-    configs = parse_as(Config, markdown)
+    table = parse_table(markdown)
+    configs = table.to_models(Config)
     assert configs[0].api_key == "abc"
     assert configs[0].max_retries == 3

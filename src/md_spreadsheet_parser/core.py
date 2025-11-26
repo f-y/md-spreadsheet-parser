@@ -1,7 +1,6 @@
 import re
 from .schemas import (
     ParsingSchema,
-    ParseResult,
     DEFAULT_SCHEMA,
     Sheet,
     Workbook,
@@ -85,7 +84,7 @@ def is_separator_row(row_cells: list[str], schema: ParsingSchema) -> bool:
     return True
 
 
-def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> ParseResult:
+def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
     """
     Parses a single block of text into a table.
 
@@ -94,7 +93,7 @@ def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> ParseResul
         schema (ParsingSchema, optional): The parsing configuration. Defaults to DEFAULT_SCHEMA.
 
     Returns:
-        ParseResult: The parsed table result containing headers, rows, and metadata.
+        Table: The parsed table result containing headers, rows, and metadata.
 
     Example:
         ```python
@@ -136,9 +135,7 @@ def parse_table(text: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> ParseResul
     if potential_header is not None:
         rows.append(potential_header)
 
-    return ParseResult(
-        headers=headers, rows=rows, metadata={"schema_used": str(schema)}
-    )
+    return Table(headers=headers, rows=rows, metadata={"schema_used": str(schema)})
 
 
 def _extract_tables(text: str, schema: ParsingSchema) -> list[Table]:
