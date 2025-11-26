@@ -3,6 +3,22 @@
 A robust, zero-dependency Python library for parsing, validating, and manipulating Markdown tables.
 Turn loose Markdown text into strongly-typed data structures, validate content against schemas, and generate clean Markdown output. Ideal for building spreadsheet-like interfaces, data pipelines, and automation tools.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+    - [Command Line Interface (CLI)](#command-line-interface-cli)
+    - [Python API](#python-api)
+        - [1. Basic Parsing](#1-basic-parsing)
+        - [2. Type-Safe Validation](#2-type-safe-validation-recommended)
+        - [3. Markdown Generation](#3-markdown-generation-round-trip)
+        - [4. Advanced Parsing](#4-advanced-parsing-workbooks--metadata)
+        - [5. Robustness](#5-robustness-handling-malformed-tables)
+        - [6. Configuration](#6-configuration-schemas)
+- [Future Roadmap](#future-roadmap)
+- [License](#license)
+
 ## Features
 
 - **Pure Python & Zero Dependencies**: Lightweight and portable. Runs anywhere Python runs, including WebAssembly (Pyodide).
