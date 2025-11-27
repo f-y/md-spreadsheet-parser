@@ -27,9 +27,10 @@
 - [Usage](#usage)
     - [1. Basic Parsing](#1-basic-parsing)
     - [2. Type-Safe Validation](#2-type-safe-validation-recommended)
-    - [3. Markdown Generation](#3-markdown-generation-round-trip)
-    - [4. Advanced Features](#4-advanced-features)
-    - [5. Robustness](#5-robustness-handling-malformed-tables)
+    - [3. JSON / Dict Export](#3-json--dict-export)
+    - [4. Markdown Generation](#4-markdown-generation-round-trip)
+    - [5. Advanced Features](#5-advanced-features)
+    - [6. Robustness](#6-robustness-handling-malformed-tables)
     - [Command Line Interface (CLI)](#command-line-interface-cli)
 - [Configuration](#configuration)
 - [Future Roadmap](#future-roadmap)
@@ -146,7 +147,23 @@ except TableValidationError as e:
 *   **Optional Fields**: Handles `Optional[T]` by converting empty strings to `None`.
 *   **Validation**: Raises detailed errors if data doesn't match the schema.
 
-### 3. Markdown Generation (Round-Trip)
+### 3. JSON / Dict Export
+
+All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary, making it easy to serialize or pass to other libraries (like Pandas).
+
+```python
+import json
+import pandas as pd
+
+# Export to JSON
+print(json.dumps(workbook.json, indent=2))
+
+# Convert to Pandas DataFrame
+table_data = workbook.sheets[0].tables[0].json
+df = pd.DataFrame(table_data["rows"], columns=table_data["headers"])
+```
+
+### 4. Markdown Generation (Round-Trip)
 
 You can modify parsed objects and convert them back to Markdown strings using `to_markdown()`. This enables a complete "Parse -> Modify -> Generate" workflow.
 
@@ -169,7 +186,7 @@ print(table.to_markdown(schema))
 # | 3 | 4 |
 ```
 
-### 4. Advanced Features
+### 5. Advanced Features
 
 **Metadata Extraction (Table Names & Descriptions)**
 You can configure the parser to extract table names (from headers) and descriptions (text preceding the table).
@@ -241,7 +258,7 @@ print(len(tables))
 # 2
 ```
 
-### 5. Robustness (Handling Malformed Tables)
+### 6. Robustness (Handling Malformed Tables)
 
 The parser is designed to handle imperfect markdown tables gracefully.
 
@@ -299,21 +316,6 @@ Customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
 | `sheet_header_level` | `2` | (MultiTable) Header level for sheets. |
 | `table_header_level` | `None` | (MultiTable) Header level for tables. |
 | `capture_description` | `False` | (MultiTable) Capture text between header and table. |
-
-**JSON / Dict Export**
-All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary, making it easy to serialize or pass to other libraries (like Pandas).
-
-```python
-import json
-import pandas as pd
-
-# Export to JSON
-print(json.dumps(workbook.json, indent=2))
-
-# Convert to Pandas DataFrame
-table_data = workbook.sheets[0].tables[0].json
-df = pd.DataFrame(table_data["rows"], columns=table_data["headers"])
-```
 
 ## Future Roadmap
 
