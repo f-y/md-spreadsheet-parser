@@ -164,6 +164,24 @@ except TableValidationError as e:
 *   **Optional Fields**: Handles `Optional[T]` by converting empty strings to `None`.
 *   **Validation**: Raises detailed errors if data doesn't match the schema.
 
+### Pydantic Integration (Optional)
+
+For more advanced validation (email format, ranges, regex), you can use [Pydantic](https://docs.pydantic.dev/) models instead of dataclasses. This feature is enabled automatically if `pydantic` is installed.
+
+```python
+from pydantic import BaseModel, Field, EmailStr
+
+class User(BaseModel):
+    name: str = Field(alias="User Name")
+    age: int = Field(gt=0)
+    email: EmailStr
+
+# Automatically detects Pydantic model and uses it for validation
+users = parse_table(markdown).to_models(User)
+```
+
+The parser respects Pydantic's `alias` and `Field` constraints.
+
 ### 3. JSON / Dict Export
 
 All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary, making it easy to serialize or pass to other libraries (like Pandas).

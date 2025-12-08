@@ -25,4 +25,5 @@ dev = [
     "mkdocstrings[python]>=0.25.0",
     "mkdocs-include-markdown-plugin>=6.0.0",
     "ruff>=0.9.0",
+    "pydantic>=2.12.5",
 ]
