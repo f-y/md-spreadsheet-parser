@@ -5,7 +5,8 @@ from .core import (
     scan_tables,
     parse_table_from_file,
     parse_workbook_from_file,
-    scan_tables_from_file
+    scan_tables_from_file,
+    scan_tables_iter,
 )
 from .schemas import (
     ParsingSchema,
@@ -34,6 +35,7 @@ __all__ = [
     "parse_table_from_file",
     "parse_workbook_from_file",
     "scan_tables_from_file",
+    "scan_tables_iter",
     "ParsingSchema",
     "MultiTableParsingSchema",
     "ConversionSchema",

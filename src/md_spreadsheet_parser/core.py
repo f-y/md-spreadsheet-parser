@@ -440,3 +440,140 @@ def scan_tables_from_file(
     """
     content = _read_content(source)
     return scan_tables(content, schema)
+
+
+from typing import Iterator, Iterable
+
+def _iter_lines(source: Union[str, Path, TextIO, Iterable[str]]) -> Iterator[str]:
+    """Helper to iterate lines from various sources."""
+    if isinstance(source, (str, Path)):
+        # If it's a file path, valid file
+        with open(source, "r", encoding="utf-8") as f:
+            yield from f
+    elif hasattr(source, "read") or isinstance(source, Iterable):
+        # File object or list of strings
+        # If it's a file object, iterating it yields lines
+        for line in source:
+            yield line
+    else:
+        raise ValueError(f"Invalid source type for iteration: {type(source)}")
+
+
+def scan_tables_iter(
+    source: Union[str, Path, TextIO, Iterable[str]], 
+    schema: MultiTableParsingSchema | None = None
+) -> Iterator[Table]:
+    """
+    Stream tables from a source (file path, file object, or iterable) one by one.
+    This allows processing files larger than memory, provided that individual tables fit in memory.
+    
+    Args:
+        source: File path, open file object, or iterable of strings.
+        schema: Parsing configuration.
+        
+    Yields:
+        Table objects found in the stream.
+    """
+    if schema is None:
+        schema = MultiTableParsingSchema()
+
+    header_prefix = None
+    if schema.table_header_level is not None:
+        header_prefix = "#" * schema.table_header_level + " "
+
+    current_lines: list[str] = []
+    current_name: str | None = None
+    # We track line number manually for metadata
+    current_line_idx = 0
+    # Start of the current block
+    block_start_line = 0
+
+    def parse_and_yield(lines: list[str], name: str | None, start_offset: int) -> Iterator[Table]:
+        if not lines:
+            return
+        
+        # Check if block looks like a table (has separator)
+        block_text = "".join(lines) # lines already contain \n usually from file iteration?
+        # File iteration includes \n. strip() won't remove internal chars.
+        # But _extract_tables splits by \n, so it gets lines without \n.
+        # Let's normalize: join then internal logic splits? 
+        # Or better: `lines` here are strings. If they have \n at end, we should probably strip it for logic consistency with parse_table?
+        # parse_table does split('\n').
+        
+        if schema.column_separator not in block_text:
+            return
+
+        # Simple extraction logic similar to process_table_block
+        # Note: We can't reuse _extract_tables because it expects full text.
+        # We reuse parsing logic.
+        
+        # Split description vs table
+        # We need list of lines stripped of newline for index finding
+        stripped_lines = [l.rstrip("\n") for l in lines]
+        
+        table_start_idx = -1
+        for idx, line in enumerate(stripped_lines):
+            if schema.column_separator in line:
+                table_start_idx = idx
+                break
+        
+        if table_start_idx != -1:
+            desc_lines = stripped_lines[:table_start_idx]
+            table_lines = stripped_lines[table_start_idx:]
+            
+            table_text = "\n".join(table_lines)
+            table = parse_table(table_text, schema)
+            
+            if table.rows or table.headers:
+                description = None
+                if schema.capture_description:
+                    desc_text = "\n".join(d.strip() for d in desc_lines if d.strip())
+                    if desc_text:
+                        description = desc_text
+                
+                table = replace(
+                    table,
+                    name=name,
+                    description=description,
+                    start_line=start_offset + table_start_idx,
+                    end_line=start_offset + len(lines)
+                )
+                yield table
+
+    for line in _iter_lines(source):
+        # normalize: file iter yields line with \n
+        stripped_line = line.strip()
+        
+        is_header = header_prefix and stripped_line.startswith(header_prefix)
+        is_block_end = (stripped_line == "") and (schema.table_header_level is None)
+        # Actually, if we use headers, blank lines don't necessarily end the *named* block,
+        # but in `_extract_tables`, we accumulate lines until next header.
+        # But `_extract_tables` THEN splits that block by blank lines (via _extract_tables_simple).
+        # So essentially: blank line ALWAYS ends a *Table*, but maybe not the *Section*.
+        # For infinite streaming, we should yield as soon as a table ends (blank line).
+        
+        if is_header:
+            # New section starts. Yield previous buffer if any.
+            yield from parse_and_yield(current_lines, current_name, block_start_line)
+            
+            current_name = stripped_line[len(header_prefix):].strip()
+            current_lines = []
+            block_start_line = current_line_idx
+            
+        elif stripped_line == "":
+            # Blank line.
+            # If we are strictly header-based, blank lines might separate tables within same section?
+            # Yes. So we should assume blank line ends a table.
+            # But we must persist `current_name` across blank lines until next header.
+            yield from parse_and_yield(current_lines, current_name, block_start_line)
+            current_lines = []
+            # block_start_line for NEXT block will be current_line_idx + 1
+            block_start_line = current_line_idx + 1
+            
+        else:
+            current_lines.append(line)
+            
+        current_line_idx += 1
+
+    # End of stream
+    yield from parse_and_yield(current_lines, current_name, block_start_line)

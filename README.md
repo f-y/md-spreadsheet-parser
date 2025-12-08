@@ -447,6 +447,28 @@ print(table.rows)
 
 This ensures that `table.rows` always matches the structure of `table.headers`, preventing crashes during iteration or validation.
 
+### 8. Performance & Scalability (Streaming API)
+
+**Beyond Excel's Limits**: While Excel is limited to 1,048,576 rows, `md-spreadsheet-parser` can process Markdown files of **unlimited size** (e.g., 10GB+ server logs) using the Streaming API.
+
+**scan_tables_iter**:
+This function reads the file line-by-line and yields `Table` objects as they are found. It does **not** load the entire file into memory.
+
+```python
+from md_spreadsheet_parser import scan_tables_iter
+
+# Process a massive log file (e.g., 10GB)
+# Memory usage remains low (only the size of a single table block)
+for table in scan_tables_iter("huge_server_log.md"):
+    print(f"Found table with {len(table.rows)} rows")
+    
+    # Process rows...
+    for row in table.rows:
+        pass
+```
+
+This is ideal for data pipelines, log analysis, and processing exports that are too large to open in standard spreadsheet editors.
+
 ### Command Line Interface (CLI)
 
 You can use the `md-spreadsheet-parser` command to parse Markdown files and output JSON. This is useful for piping data to other tools.
