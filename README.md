@@ -305,6 +305,31 @@ schema = ConversionSchema(
 data = parse_table(markdown).to_models(Product, conversion_schema=schema)
 ```
 
+**Field-Specific Converters**
+
+For granular control, you can define converters for specific field names, which take precedence over type-based converters.
+
+```python
+def parse_usd(val): ...
+def parse_jpy(val): ...
+
+schema = ConversionSchema(
+    # Type-based defaults (Low priority)
+    custom_converters={
+        Decimal: parse_usd 
+    },
+    # Field-name overrides (High priority)
+    field_converters={
+        "price_jpy": parse_jpy,
+        "created_at": lambda x: datetime.strptime(x, "%Y/%m/%d")
+    }
+)
+
+# price_usd (no override) -> custom_converters (parse_usd)
+# price_jpy (override)    -> field_converters (parse_jpy)
+data = parse_table(markdown).to_models(Product, conversion_schema=schema)
+```
+
 ### 7. Robustness (Handling Malformed Tables)
 
 The parser is designed to handle imperfect markdown tables gracefully.

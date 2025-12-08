@@ -134,9 +134,14 @@ def validate_table(
                 field_def = cls_fields[field_name]
 
                 try:
-                    converted_value = _convert_value(
-                        cell_value, field_def.type, conversion_schema
-                    )
+                    # Check for field-specific converter first
+                    if field_name in conversion_schema.field_converters:
+                        converter = conversion_schema.field_converters[field_name]
+                        converted_value = converter(cell_value)
+                    else:
+                        converted_value = _convert_value(
+                            cell_value, field_def.type, conversion_schema
+                        )
                     row_data[field_name] = converted_value
                 except ValueError as e:
                     row_errors.append(f"Column '{field_name}': {str(e)}")

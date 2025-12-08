@@ -64,6 +64,7 @@ class ConversionSchema:
         ("on", "off"),
     )
     custom_converters: dict[type, Callable[[str], Any]] = field(default_factory=dict)
+    field_converters: dict[str, Callable[[str], Any]] = field(default_factory=dict)
 
 
 DEFAULT_CONVERSION_SCHEMA = ConversionSchema()

@@ -119,3 +119,68 @@ def test_case_insensitivity():
     
     assert users[0].is_active is True
     assert users[1].is_active is False
+
+def test_field_specific_converter():
+    """
+    Test using different converters for different fields of the same type.
+    """
+    @dataclass
+    class Product:
+        price_usd: Decimal
+        price_jpy: Decimal
+        
+    markdown = """
+| Price USD | Price JPY |
+| --- | --- |
+| $10 | ¥1,000 |
+"""
+    
+    def parse_usd(v: str) -> Decimal:
+        return Decimal(v.replace("$", "").strip())
+        
+    def parse_jpy(v: str) -> Decimal:
+        return Decimal(v.replace("¥", "").replace(",", "").strip())
+
+    schema = ConversionSchema(
+        field_converters={
+            "price_usd": parse_usd,
+            "price_jpy": parse_jpy
+        }
+    )
+    
+    table = parse_table(markdown)
+    products = table.to_models(Product, conversion_schema=schema)
+    
+    assert products[0].price_usd == Decimal("10")
+    assert products[0].price_jpy == Decimal("1000")
+
+def test_field_converter_overrides_type_converter():
+    """
+    Test that a field-specific converter takes precedence over the type-based converter.
+    """
+    @dataclass
+    class Item:
+        val1: int
+        val2: int # Special
+        
+    markdown = """
+| Val1 | Val2 |
+| --- | --- |
+| 10 | 10 |
+"""
+
+    def parse_double(v: str) -> int:
+        return int(v) * 2
+
+    schema = ConversionSchema(
+        custom_converters={int: lambda x: int(x)}, # Standard logic explicitly
+        field_converters={
+            "val2": parse_double
+        }
+    )
+    
+    table = parse_table(markdown)
+    items = table.to_models(Item, conversion_schema=schema)
+    
+    assert items[0].val1 == 10 # Uses default/type converter (10)
+    assert items[0].val2 == 20 # Uses field converter (10 * 2)
