@@ -56,6 +56,17 @@ from dataclasses import field
 class ConversionSchema:
     """
     Configuration for converting string values to Python types.
+
+    Attributes:
+        boolean_pairs: Pairs of strings representing (True, False). Case-insensitive.
+                       Example: `(("yes", "no"), ("on", "off"))`.
+        custom_converters: Dictionary mapping ANY Python type to a conversion function `str -> Any`.
+                           You can specify:
+                           - Built-in types: `int`, `float`, `bool` (to override default behavior)
+                           - Standard library types: `Decimal`, `datetime`, `date`, `ZoneInfo`
+                           - Custom classes: `MyClass`, `Product`
+        field_converters: Dictionary mapping field names (str) to conversion functions.
+                          Takes precedence over `custom_converters`.
     """
     boolean_pairs: tuple[tuple[str, str], ...] = (
         ("true", "false"),

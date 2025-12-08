@@ -288,7 +288,13 @@ users = parse_table(markdown).to_models(User, conversion_schema=schema)
 
 **Custom Type Converters**
 
-Register custom conversion functions for specific types, such as `Decimal` for currency.
+Register custom conversion functions for specific types. You can use **ANY Python type** as a key, including:
+
+- **Built-ins**: `int`, `float`, `bool` (to override default behavior)
+- **Standard Library**: `Decimal`, `datetime`, `date`, `ZoneInfo`, `UUID`
+- **Custom Classes**: Your own data classes or objects
+
+Example using `Decimal`:
 
 ```python
 from decimal import Decimal

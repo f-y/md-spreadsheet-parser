@@ -184,3 +184,62 @@ def test_field_converter_overrides_type_converter():
     
     assert items[0].val1 == 10 # Uses default/type converter (10)
     assert items[0].val2 == 20 # Uses field converter (10 * 2)
+
+def test_advanced_custom_types():
+    """
+    Test conversion for standard library types (ZoneInfo, UUID) and custom classes.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        # ZoneInfo is available in Python 3.9+
+        # If running on older python (unlikely for this project), skip this part or mock it
+        pytest.skip("ZoneInfo not available")
+
+    from uuid import UUID
+    
+    @dataclass
+    class Color:
+        r: int
+        g: int
+        b: int
+
+    @dataclass
+    class AdvancedConfig:
+        timezone: ZoneInfo
+        session_id: UUID
+        theme_color: Color
+
+    markdown = """
+| Timezone | Session ID | Theme Color |
+| --- | --- | --- |
+| Asia/Tokyo | 12345678-1234-5678-1234-567812345678 | 255,0,0 |
+"""
+
+    def parse_color(v: str) -> Color:
+        r, g, b = map(int, v.split(","))
+        return Color(r, g, b)
+
+    schema = ConversionSchema(
+        custom_converters={
+            ZoneInfo: lambda v: ZoneInfo(v),
+            UUID: lambda v: UUID(v),
+            Color: parse_color
+        }
+    )
+
+    table = parse_table(markdown)
+    configs = table.to_models(AdvancedConfig, conversion_schema=schema)
+    
+    config = configs[0]
+    
+    assert isinstance(config.timezone, ZoneInfo)
+    assert config.timezone.key == "Asia/Tokyo"
+    
+    assert isinstance(config.session_id, UUID)
+    assert str(config.session_id) == "12345678-1234-5678-1234-567812345678"
+    
+    assert isinstance(config.theme_color, Color)
+    assert config.theme_color.r == 255
+    assert config.theme_color.g == 0
+    assert config.theme_color.b == 0
