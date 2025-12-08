@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 
-from .core import parse_workbook, scan_tables
+from .parsing import parse_workbook, scan_tables
 from .schemas import MultiTableParsingSchema
 
 

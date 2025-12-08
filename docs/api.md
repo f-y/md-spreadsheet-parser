@@ -1,6 +1,6 @@
 # API Reference
 
-::: md_spreadsheet_parser.core
+::: md_spreadsheet_parser
     options:
       show_root_heading: true
       show_source: true

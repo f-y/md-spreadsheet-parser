@@ -1,8 +1,10 @@
-from .core import (
+from .parsing import (
     parse_table, 
     parse_sheet, 
     parse_workbook, 
     scan_tables,
+)
+from .loader import (
     parse_table_from_file,
     parse_workbook_from_file,
     scan_tables_from_file,
