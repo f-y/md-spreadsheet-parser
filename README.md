@@ -472,7 +472,11 @@ To disable this, set `convert_br_to_newline=False` in `ParsingSchema`.
 
 ### 9. Performance & Scalability (Streaming API)
 
-**Beyond Excel's Limits**: While Excel is limited to 1,048,576 rows, `md-spreadsheet-parser` can process Markdown files of **unlimited size** (e.g., 10GB+ server logs) using the Streaming API.
+**Do you really have a 10GB Markdown file?**
+
+Probably not. We sincerely hope you don't. Markdown wasn't built for that.
+
+But *if you do*—perhaps you're generating extensive logs or auditing standard converters—this library has your back. While Excel gives up after 1,048,576 rows, `md-spreadsheet-parser` supports streaming processing for files of **unlimited size**, keeping memory usage constant.
 
 **scan_tables_iter**:
 This function reads the file line-by-line and yields `Table` objects as they are found. It does **not** load the entire file into memory.
