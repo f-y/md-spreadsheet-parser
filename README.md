@@ -465,6 +465,9 @@ table = parse_table(markdown)
 # table.rows[0][0] == "Line1\nLine2"
 ```
 
+**Round-Trip Support:**
+When generating Markdown (e.g., `table.to_markdown()`), Python newlines (`\n`) are automatically converted back to `<br>` tags to preserve the table structure.
+
 To disable this, set `convert_br_to_newline=False` in `ParsingSchema`.
 
 ### 9. Performance & Scalability (Streaming API)
