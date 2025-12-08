@@ -4,6 +4,7 @@ from typing import Any, Type, TypeVar, get_origin, get_args, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .models import Table
+from .utils import normalize_header
 
 T = TypeVar("T")
 
@@ -19,14 +20,6 @@ class TableValidationError(Exception):
         super().__init__(
             f"Validation failed with {len(errors)} errors:\n" + "\n".join(errors)
         )
-
-
-def _normalize_header(header: str) -> str:
-    """
-    Normalizes a header string to match field names (lowercase, snake_case).
-    Example: "User Name" -> "user_name"
-    """
-    return header.lower().replace(" ", "_").strip()
 
 
 from .schemas import ConversionSchema, DEFAULT_CONVERSION_SCHEMA
@@ -129,7 +122,7 @@ def _validate_table_dataclass(
     cls_fields = {f.name: f for f in fields(schema_cls)}
     header_map: dict[int, str] = {}  # column_index -> field_name
 
-    normalized_headers = [_normalize_header(h) for h in table.headers]
+    normalized_headers = [normalize_header(h) for h in table.headers]
 
     for idx, header in enumerate(normalized_headers):
         if header in cls_fields:

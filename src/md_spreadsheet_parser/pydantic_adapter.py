@@ -5,12 +5,7 @@ from .schemas import ConversionSchema
 from .models import Table
 from .validation import TableValidationError
 
-def _normalize_header(header: str) -> str:
-    """
-    Normalizes a header string to match field names (lowercase, snake_case).
-    Example: "User Name" -> "user_name"
-    """
-    return header.lower().replace(" ", "_").strip()
+from .utils import normalize_header
 
 def validate_table_pydantic(
     table: Table,
@@ -38,18 +33,18 @@ def validate_table_pydantic(
         
         # If alias is defined, map its normalized version to the ALIAS string
         if field_info.alias:
-            lookup_map[_normalize_header(field_info.alias)] = field_info.alias
+            lookup_map[normalize_header(field_info.alias)] = field_info.alias
             
             # Also allow mapping field name if populate_by_name is likely?
             # But we can't easily know the config.
             # Let's support both: normalized(name) -> name 
             # But if collision? Alias usually wins in user intent.
-            if _normalize_header(name) not in lookup_map:
-                lookup_map[_normalize_header(name)] = name
+            if normalize_header(name) not in lookup_map:
+                lookup_map[normalize_header(name)] = name
         else:
-            lookup_map[_normalize_header(name)] = name
+            lookup_map[normalize_header(name)] = name
 
-    normalized_headers = [_normalize_header(h) for h in table.headers]
+    normalized_headers = [normalize_header(h) for h in table.headers]
 
     for idx, header in enumerate(normalized_headers):
         if header in lookup_map:
