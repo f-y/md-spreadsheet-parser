@@ -360,6 +360,34 @@ schema = ConversionSchema(
 data = parse_table(markdown).to_models(Product, conversion_schema=schema)
 ```
 
+**Standard Converters Library**
+
+For common patterns (currencies, lists), you can use the built-in helper functions in `md_spreadsheet_parser.converters` instead of writing your own.
+
+```python
+from md_spreadsheet_parser.converters import (
+    to_decimal_clean,        # Handles "$1,000", "¥500" -> Decimal
+    make_datetime_converter, # Factory for parse/TZ logic
+    make_list_converter,     # "a,b,c" -> ["a", "b", "c"]
+    make_bool_converter      # Custom strict boolean sets
+)
+
+schema = ConversionSchema(
+    custom_converters={
+        # Currency: removes $, ¥, €, £, comma, space
+        Decimal: to_decimal_clean,
+        # DateTime: ISO format default, attach Tokyo TZ if naive
+        datetime: make_datetime_converter(tz=ZoneInfo("Asia/Tokyo")),
+        # Lists: Split by comma, strip whitespace
+        list: make_list_converter(separator=",")
+    },
+    field_converters={
+        # Custom boolean for specific field
+        "is_valid": make_bool_converter(true_values=["OK"], false_values=["NG"])
+    }
+)
+```
+
 ### 7. Robustness (Handling Malformed Tables)
 
 The parser is designed to handle imperfect markdown tables gracefully.

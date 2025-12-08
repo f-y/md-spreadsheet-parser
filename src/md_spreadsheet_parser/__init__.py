@@ -34,5 +34,9 @@ __all__ = [
     "TableValidationError",
     "generate_table_markdown",
     "generate_sheet_markdown",
+    "generate_sheet_markdown",
     "generate_workbook_markdown",
+    "converters",
 ]
+
+from . import converters
