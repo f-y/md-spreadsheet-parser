@@ -521,6 +521,7 @@ Customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
 | `header_separator_char` | `-` | Character used in the separator row. |
 | `require_outer_pipes` | `True` | If `True`, generated markdown tables will include outer pipes. |
 | `strip_whitespace` | `True` | If `True`, whitespace is stripped from cell values. |
+| `convert_br_to_newline` | `True` | If `True`, `<br>` tags are converted to `\n` (and back). |
 | `root_marker` | `# Tables` | (MultiTable) Marker indicating start of data section. |
 | `sheet_header_level` | `2` | (MultiTable) Header level for sheets. |
 | `table_header_level` | `3` | (MultiTable) Header level for tables. |
