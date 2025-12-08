@@ -133,6 +133,54 @@ def parse_table(markdown: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
     return Table(headers=headers, rows=rows, metadata={"schema_used": str(schema)})
 
 
+def _extract_tables_simple(
+    lines: list[str], schema: ParsingSchema, start_line_offset: int
+) -> list[Table]:
+    """
+    Extract tables by splitting lines by blank lines.
+    Used for content within a block or when no table header level is set.
+    """
+    tables: list[Table] = []
+    current_block: list[str] = []
+    block_start = 0
+
+    for idx, line in enumerate(lines):
+        if not line.strip():
+            if current_block:
+                # Process block
+                block_text = "\n".join(current_block)
+                if schema.column_separator in block_text:
+                    table = parse_table(block_text, schema)
+                    if table.rows or table.headers:
+                        table = replace(
+                            table,
+                            start_line=start_line_offset + block_start,
+                            end_line=start_line_offset + idx,
+                        )
+                        tables.append(table)
+                current_block = []
+            block_start = idx + 1
+        else:
+            if not current_block:
+                block_start = idx
+            current_block.append(line)
+
+    # Last block
+    if current_block:
+        block_text = "\n".join(current_block)
+        if schema.column_separator in block_text:
+            table = parse_table(block_text, schema)
+            if table.rows or table.headers:
+                table = replace(
+                    table,
+                    start_line=start_line_offset + block_start,
+                    end_line=start_line_offset + len(lines),
+                )
+                tables.append(table)
+
+    return tables
+
+
 def _extract_tables(
     text: str, schema: MultiTableParsingSchema, start_line_offset: int = 0
 ) -> list[Table]:
@@ -141,123 +189,87 @@ def _extract_tables(
     If table_header_level is set, splits by that header.
     Otherwise, splits by blank lines.
     """
+    if schema.table_header_level is None:
+        return _extract_tables_simple(text.split("\n"), schema, start_line_offset)
+
+    # Split by table header
+    header_prefix = "#" * schema.table_header_level + " "
+    lines = text.split("\n")
     tables: list[Table] = []
 
-    if schema.table_header_level is not None:
-        # Split by table header
-        header_prefix = "#" * schema.table_header_level + " "
-        lines = text.split("\n")
+    current_table_lines: list[str] = []
+    current_table_name: str | None = None
+    current_description_lines: list[str] = []
+    current_block_start_line = start_line_offset
 
-        current_table_lines: list[str] = []
-        current_table_name: str | None = None
-        current_description_lines: list[str] = []
-        current_block_start_line = start_line_offset
+    def process_table_block(end_line_idx: int):
+        if not current_table_lines:
+            return
+            
+        # Try to separate description from table content
+        # Simple heuristic: find the first line that looks like a table row
+        table_start_idx = -1
+        for idx, line in enumerate(current_table_lines):
+            if schema.column_separator in line:
+                table_start_idx = idx
+                break
 
-        def process_table_block(end_line_idx: int):
-            if current_table_lines:
-                # Try to separate description from table content
-                # Simple heuristic: find the first line that looks like a table row
-                table_start_idx = -1
-                for idx, line in enumerate(current_table_lines):
-                    if schema.column_separator in line:
-                        table_start_idx = idx
-                        break
+        if table_start_idx != -1:
+            # Description is everything before table start
+            desc_lines = (
+                current_description_lines
+                + current_table_lines[:table_start_idx]
+            )
+            
+            # Content is everything after (and including) table start
+            content_lines = current_table_lines[table_start_idx:]
+            
+            # Logic adjustment:
+            # If named, content starts at header_line + 1.
+            # If unnamed, content starts at current_block_start_line.
+            offset_correction = 1 if current_table_name else 0
+            
+            # Absolute start line of the content part
+            abs_content_start = start_line_offset + current_block_start_line + offset_correction + table_start_idx
 
-                if table_start_idx != -1:
-                    # Description is everything before table start
-                    desc_lines = (
-                        current_description_lines
-                        + current_table_lines[:table_start_idx]
-                    )
-                    table_content = "\n".join(current_table_lines[table_start_idx:])
+            # Parse tables from the content lines
+            block_tables = _extract_tables_simple(content_lines, schema, abs_content_start)
 
-                    description = (
-                        "\n".join(line.strip() for line in desc_lines if line.strip())
-                        if schema.capture_description
-                        else None
-                    )
-                    if description == "":
-                        description = None
+            if block_tables:
+                # The first table found gets the name and description
+                first_table = block_tables[0]
+                
+                description = (
+                    "\n".join(line.strip() for line in desc_lines if line.strip())
+                    if schema.capture_description
+                    else None
+                )
+                if description == "":
+                    description = None
 
-                    # If the table has no headers/rows after parsing, it might be just text.
-                    # parse_table will handle it.
-                    
-                    # Absolute line calculation
-                    # If this block had a header, current_block_start_line is header line.
-                    # If it was an anonymous block (start of file or between headers), 
-                    # current_block_start_line is where it started.
-                    
-                    # Refined offset:
-                    # The content starts at current_block_start_line + (1 if current_table_name else 0) ??
-                    # No, let's track the content start line more clearly.
-                    
-                    # Logic adjustment:
-                    # If named, content starts at header_line + 1.
-                    # If unnamed, content starts at current_block_start_line.
-                    
-                    offset_correction = 1 if current_table_name else 0
-                    abs_table_start = start_line_offset + current_block_start_line + offset_correction + table_start_idx
-                    abs_table_end = start_line_offset + end_line_idx 
-                   
-                    table = parse_table(table_content, schema)
-                    
-                    # Only add if it actually looks like a table (has rows or headers)
-                    if table.rows or table.headers:
-                        table = replace(
-                            table, 
-                            name=current_table_name, 
-                            description=description,
-                            start_line=abs_table_start,
-                            end_line=abs_table_end
-                        )
-                        tables.append(table)
+                first_table = replace(
+                    first_table,
+                    name=current_table_name,
+                    description=description
+                )
+                block_tables[0] = first_table
+                
+                # Append all found tables
+                tables.extend(block_tables)
 
-        for idx, line in enumerate(lines):
-            stripped = line.strip()
-            if stripped.startswith(header_prefix):
-                process_table_block(idx)
-                current_table_name = stripped[len(header_prefix) :].strip()
-                current_table_lines = []
-                current_description_lines = []
-                current_block_start_line = idx
-            else:
-                # Accumulate lines regardless of whether we have a name
-                current_table_lines.append(line)
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith(header_prefix):
+            process_table_block(idx)
+            current_table_name = stripped[len(header_prefix) :].strip()
+            current_table_lines = []
+            current_description_lines = []
+            current_block_start_line = idx
+        else:
+            # Accumulate lines regardless of whether we have a name
+            current_table_lines.append(line)
 
-        process_table_block(len(lines))
-
-    else:
-        # Legacy/Simple mode: Split by blank lines
-        # We need to track line numbers.
-        lines = text.split("\n")
-        current_block = []
-        block_start = 0
-        
-        for idx, line in enumerate(lines):
-            if not line.strip():
-                if current_block:
-                    # Process block
-                    block_text = "\n".join(current_block)
-                    if schema.column_separator in block_text:
-                        table = parse_table(block_text, schema)
-                        if table.rows or table.headers:
-                            table = replace(table, start_line=start_line_offset + block_start, end_line=start_line_offset + idx)
-                            tables.append(table)
-                    current_block = []
-                block_start = idx + 1
-            else:
-                if not current_block:
-                    block_start = idx
-                current_block.append(line)
-        
-        # Last block
-        if current_block:
-            block_text = "\n".join(current_block)
-            if schema.column_separator in block_text:
-                table = parse_table(block_text, schema)
-                if table.rows or table.headers:
-                    table = replace(table, start_line=start_line_offset + block_start, end_line=start_line_offset + len(lines))
-                    tables.append(table)
+    process_table_block(len(lines))
 
     return tables
 

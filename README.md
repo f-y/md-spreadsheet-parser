@@ -30,7 +30,8 @@
     - [3. JSON / Dict Export](#3-json--dict-export)
     - [4. Markdown Generation](#4-markdown-generation-round-trip)
     - [5. Advanced Features](#5-advanced-features)
-    - [6. Robustness](#6-robustness-handling-malformed-tables)
+    - [6. Advanced Type Conversion](#6-advanced-type-conversion)
+    - [7. Robustness](#7-robustness-handling-malformed-tables)
     - [Command Line Interface (CLI)](#command-line-interface-cli)
 - [Configuration](#configuration)
 - [Future Roadmap](#future-roadmap)
@@ -39,7 +40,7 @@
 ## Features
 
 - **Pure Python & Zero Dependencies**: Lightweight and portable. Runs anywhere Python runs, including **WebAssembly (Pyodide)**.
-- **Type-Safe Validation**: Convert loose Markdown tables into strongly-typed Python `dataclasses` with automatic type conversion.
+- **Type-Safe Validation**: Convert loose Markdown tables into strongly-typed Python `dataclasses` with automatic type conversion, including customizable boolean logic (I18N) and custom type converters.
 - **Round-Trip Support**: Parse to objects, modify data, and generate Markdown back. Perfect for editors.
 - **Robust Parsing**: Gracefully handles malformed tables (missing/extra columns) and escaped characters.
 - **Multi-Table Workbooks**: Support for parsing multiple sheets and tables from a single file, including metadata.
@@ -142,8 +143,8 @@ except TableValidationError as e:
 ```
 
 **Features:**
-*   **Type Conversion**: Automatically converts strings to `int`, `float`, `bool`.
-*   **Boolean Handling**: Understands "yes/no", "on/off", "1/0", "true/false".
+*   **Type Conversion**: Automatically converts strings to `int`, `float`, `bool` using standard rules.
+*   **Boolean Handling (Default)**: Supports standard pairs out-of-the-box: `true/false`, `yes/no`, `on/off`, `1/0`. (See [Advanced Type Conversion](#6-advanced-type-conversion) for customization).
 *   **Optional Fields**: Handles `Optional[T]` by converting empty strings to `None`.
 *   **Validation**: Raises detailed errors if data doesn't match the schema.
 
@@ -258,7 +259,53 @@ print(len(tables))
 # 2
 ```
 
-### 6. Robustness (Handling Malformed Tables)
+### 6. Advanced Type Conversion
+
+You can customize how string values are converted to Python objects by passing a `ConversionSchema` to `to_models()`. This is useful for internationalization (I18N) and handling custom types.
+
+**Internationalization (I18N): Custom Boolean Pairs**
+
+Configure which string pairs map to `True`/`False` (case-insensitive).
+
+```python
+from md_spreadsheet_parser import parse_table, ConversionSchema
+
+markdown = """
+| User | Active? |
+| --- | --- |
+| Tanaka | はい |
+| Suzuki | いいえ |
+"""
+
+# Configure "はい" -> True, "いいえ" -> False
+schema = ConversionSchema(
+    boolean_pairs=(("はい", "いいえ"),)
+)
+
+users = parse_table(markdown).to_models(User, conversion_schema=schema)
+# Tanaka.active is True
+```
+
+**Custom Type Converters**
+
+Register custom conversion functions for specific types, such as `Decimal` for currency.
+
+```python
+from decimal import Decimal
+from md_spreadsheet_parser import ConversionSchema
+
+def parse_currency(val: str) -> Decimal:
+    return Decimal(val.replace("$", "").replace(",", ""))
+
+schema = ConversionSchema(
+    custom_converters={Decimal: parse_currency}
+)
+
+# Now fields typed as Decimal key will use this converter
+data = parse_table(markdown).to_models(Product, conversion_schema=schema)
+```
+
+### 7. Robustness (Handling Malformed Tables)
 
 The parser is designed to handle imperfect markdown tables gracefully.
 

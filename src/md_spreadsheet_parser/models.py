@@ -3,7 +3,7 @@ from typing import Any, TypedDict, TypeVar
 
 T = TypeVar("T")
 
-from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA
+from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA, ConversionSchema, DEFAULT_CONVERSION_SCHEMA
 from .validation import validate_table
 from .generator import (
     generate_table_markdown,
@@ -87,12 +87,17 @@ class Table:
             "end_line": self.end_line,
         }
 
-    def to_models(self, schema_cls: type[T]) -> list[T]:
+    def to_models(
+        self,
+        schema_cls: type[T],
+        conversion_schema: ConversionSchema = DEFAULT_CONVERSION_SCHEMA,
+    ) -> list[T]:
         """
         Converts the table rows into a list of dataclass instances, performing validation and type conversion.
 
         Args:
             schema_cls (type[T]): The dataclass type to validate against.
+            conversion_schema (ConversionSchema, optional): Configuration for type conversion.
 
         Returns:
             list[T]: A list of validated dataclass instances.
@@ -101,7 +106,7 @@ class Table:
             ValueError: If schema_cls is not a dataclass.
             TableValidationError: If validation fails for any row or if the table has no headers.
         """
-        return validate_table(self, schema_cls)
+        return validate_table(self, schema_cls, conversion_schema)
 
     def to_markdown(self, schema: ParsingSchema = DEFAULT_SCHEMA) -> str:
         """

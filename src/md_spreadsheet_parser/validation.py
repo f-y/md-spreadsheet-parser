@@ -29,23 +29,23 @@ def _normalize_header(header: str) -> str:
     return header.lower().replace(" ", "_").strip()
 
 
-def _convert_value(value: str, target_type: Type) -> Any:
+from .schemas import ConversionSchema, DEFAULT_CONVERSION_SCHEMA
+
+def _convert_value(
+    value: str, target_type: Type, schema: ConversionSchema = DEFAULT_CONVERSION_SCHEMA
+) -> Any:
     """
     Converts a string value to the target type.
     Supports int, float, bool, str, and Optional types.
     """
+    # Check custom converters first
+    if target_type in schema.custom_converters:
+        return schema.custom_converters[target_type](value)
+
     origin = get_origin(target_type)
     args = get_args(target_type)
 
     # Handle Optional[T] (Union[T, None])
-    # Note: typing.Union is not types.UnionType. We check origin against both if needed.
-    # Actually get_origin(Union[int, None]) returns typing.Union.
-    # get_origin(int | None) returns types.UnionType.
-
-    # We need to handle both typing.Union and types.UnionType (for | syntax)
-    # Since we don't import Union from typing, we can check string representation or just use the fact that
-    # get_origin returns the class.
-
     # Robust check for Union-like types
     if origin is not None and (origin is types.UnionType or "Union" in str(origin)):
         if type(None) in args:
@@ -54,7 +54,7 @@ def _convert_value(value: str, target_type: Type) -> Any:
             # Find the non-None type
             for arg in args:
                 if arg is not type(None):
-                    return _convert_value(value, arg)
+                    return _convert_value(value, arg, schema)
 
     # Handle basic types
     if target_type is int:
@@ -69,10 +69,12 @@ def _convert_value(value: str, target_type: Type) -> Any:
 
     if target_type is bool:
         lower_val = value.lower().strip()
-        if lower_val in ("true", "yes", "1", "on"):
-            return True
-        if lower_val in ("false", "no", "0", "off", ""):
-            return False
+        for true_val, false_val in schema.boolean_pairs:
+            if lower_val == true_val.lower():
+                return True
+            if lower_val == false_val.lower():
+                return False
+                
         raise ValueError(f"Invalid boolean value: '{value}'")
 
     if target_type is str:
@@ -82,13 +84,18 @@ def _convert_value(value: str, target_type: Type) -> Any:
     return value
 
 
-def validate_table(table: "Table", schema_cls: Type[T]) -> list[T]:
+def validate_table(
+    table: "Table",
+    schema_cls: Type[T],
+    conversion_schema: ConversionSchema = DEFAULT_CONVERSION_SCHEMA,
+) -> list[T]:
     """
     Validates a Table object against a dataclass schema.
 
     Args:
         table: The Table object to validate.
         schema_cls: The dataclass type to validate against.
+        conversion_schema: Configuration for type conversion.
 
     Returns:
         list[T]: A list of validated dataclass instances.
@@ -127,7 +134,9 @@ def validate_table(table: "Table", schema_cls: Type[T]) -> list[T]:
                 field_def = cls_fields[field_name]
 
                 try:
-                    converted_value = _convert_value(cell_value, field_def.type)
+                    converted_value = _convert_value(
+                        cell_value, field_def.type, conversion_schema
+                    )
                     row_data[field_name] = converted_value
                 except ValueError as e:
                     row_errors.append(f"Column '{field_name}': {str(e)}")

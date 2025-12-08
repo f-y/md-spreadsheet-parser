@@ -47,3 +47,23 @@ class MultiTableParsingSchema(ParsingSchema):
             raise ValueError(
                 "capture_description=True requires table_header_level to be set"
             )
+
+
+from typing import Callable, Any
+from dataclasses import field
+
+@dataclass(frozen=True)
+class ConversionSchema:
+    """
+    Configuration for converting string values to Python types.
+    """
+    boolean_pairs: tuple[tuple[str, str], ...] = (
+        ("true", "false"),
+        ("yes", "no"),
+        ("1", "0"),
+        ("on", "off"),
+    )
+    custom_converters: dict[type, Callable[[str], Any]] = field(default_factory=dict)
+
+
+DEFAULT_CONVERSION_SCHEMA = ConversionSchema()
