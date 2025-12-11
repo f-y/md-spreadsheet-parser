@@ -27,7 +27,7 @@
 - [Usage](#usage)
     - [1. Basic Parsing](#1-basic-parsing)
     - [2. Type-Safe Validation](#2-type-safe-validation-recommended)
-        - [Pydantic Integration](#pydantic-integration-optional)
+        - [Pydantic Integration](#pydantic-integration)
     - [3. JSON & Dictionary Conversion](#3-json--dictionary-conversion)
     - [4. Pandas Integration & Export](#4-pandas-integration--export)
     - [5. Markdown Generation](#5-markdown-generation-round-trip)
@@ -223,7 +223,7 @@ except TableValidationError as e:
 
 **Features:**
 *   **Type Conversion**: Automatically converts strings to `int`, `float`, `bool` using standard rules.
-*   **Boolean Handling (Default)**: Supports standard pairs out-of-the-box: `true/false`, `yes/no`, `on/off`, `1/0`. (See [Advanced Type Conversion](#6-advanced-type-conversion) for customization).
+*   **Boolean Handling (Default)**: Supports standard pairs out-of-the-box: `true/false`, `yes/no`, `on/off`, `1/0`. (See [Advanced Type Conversion](#7-advanced-type-conversion) for customization).
 *   **Optional Fields**: Handles `Optional[T]` by converting empty strings to `None`.
 *   **Validation**: Raises detailed errors if data doesn't match the schema.
 
