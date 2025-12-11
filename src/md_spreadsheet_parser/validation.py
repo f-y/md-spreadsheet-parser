@@ -1,5 +1,6 @@
 import json
-from dataclasses import fields, is_dataclass, field
+import types
+from dataclasses import fields, is_dataclass
 from typing import Any, Type, TypeVar, get_origin, get_args, TYPE_CHECKING, is_typeddict
 
 if TYPE_CHECKING:
@@ -91,27 +92,7 @@ def _convert_value(
     return value
 
 
-def validate_table(
-    table: "Table",
-    schema_cls: Type[T],
-    conversion_schema: ConversionSchema = DEFAULT_CONVERSION_SCHEMA,
-) -> list[T]:
-    """
-    Validates a Table object against a dataclass schema.
 
-    Args:
-        table: The Table object to validate.
-        schema_cls: The dataclass type to validate against.
-        conversion_schema: Configuration for type conversion.
-
-    Returns:
-        list[T]: A list of validated dataclass instances.
-
-    Raises:
-        ValueError: If schema_cls is not a dataclass.
-        TableValidationError: If validation fails.
-    """
-    return results
 
 
 # --- Pydantic Support (Optional) ---

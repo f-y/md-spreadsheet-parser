@@ -156,7 +156,7 @@ def scan_tables_iter(
         stripped_line = line.strip()
         
         is_header = header_prefix and stripped_line.startswith(header_prefix)
-        is_block_end = (stripped_line == "") and (schema.table_header_level is None)
+
         
         if is_header:
             # New section starts. Yield previous buffer if any.
