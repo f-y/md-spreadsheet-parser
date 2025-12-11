@@ -1,6 +1,6 @@
-import types
-from dataclasses import fields, is_dataclass
-from typing import Any, Type, TypeVar, get_origin, get_args, TYPE_CHECKING
+import json
+from dataclasses import fields, is_dataclass, field
+from typing import Any, Type, TypeVar, get_origin, get_args, TYPE_CHECKING, is_typeddict
 
 if TYPE_CHECKING:
     from .models import Table
@@ -72,6 +72,20 @@ def _convert_value(
 
     if target_type is str:
         return value
+
+    # JSON Parsing for dict/list
+    # Logic: If target is strict dict or list, try parsing as JSON
+    # This covers dict, list, dict[str, Any], list[int], etc.
+    if origin in (dict, list) or target_type in (dict, list):
+         if not value.strip():
+             # Empty string -> Empty dict/list? Or None?
+             # Let's say empty string is not valid JSON, so strictly it should fail or return empty type.
+             # For user friendliness, let's treat empty string as empty container if not Optional
+             return origin() if origin else target_type()
+         try:
+             return json.loads(value)
+         except json.JSONDecodeError as e:
+             raise ValueError(f"Invalid JSON for {target_type}: {e}")
 
     # Fallback for other types (or if type hint is missing)
     return value
@@ -176,6 +190,120 @@ def _validate_table_dataclass(
     return results
 
 
+def _validate_table_typeddict(
+    table: "Table",
+    schema_cls: Type[T],
+    conversion_schema: ConversionSchema,
+) -> list[T]:
+    """
+    Validates a Table using TypedDict.
+    """
+    # TypedDict annotations
+    # __annotations__ or __required_keys__ / __optional_keys__ behavior
+    # For simplicity, we trust __annotations__ for type hints
+    annotations = schema_cls.__annotations__
+    
+    header_map: dict[int, str] = {}
+    normalized_headers = [normalize_header(h) for h in table.headers]
+    
+    # Map headers to TypedDict keys
+    # Prioritize exact match, then normalized match
+    # TypedDict doesn't support 'alias' natively usually, so simple mapping
+    for idx, header in enumerate(normalized_headers):
+        # 1. Check direct match with key names (normalized)
+        for key in annotations:
+            if normalize_header(key) == header:
+                header_map[idx] = key
+                break
+
+    results: list[T] = []
+    errors: list[str] = []
+
+    for row_idx, row in enumerate(table.rows):
+        row_data = {}
+        row_errors = []
+
+        for col_idx, cell_value in enumerate(row):
+            if col_idx in header_map:
+                key = header_map[col_idx]
+                target_type = annotations[key]
+
+                try:
+                     if key in conversion_schema.field_converters:
+                        converter = conversion_schema.field_converters[key]
+                        converted_value = converter(cell_value)
+                     else:
+                        converted_value = _convert_value(
+                            cell_value, target_type, conversion_schema
+                        )
+                     row_data[key] = converted_value
+                except Exception as e:
+                    row_errors.append(f"Column '{key}': {str(e)}")
+        
+        if row_errors:
+            for err in row_errors:
+                errors.append(f"Row {row_idx + 1}: {err}")
+            continue
+
+        # Create TypedDict (it's just a dict at runtime)
+        # We should check required keys if using TypedDict features (Python 3.9+)
+        # But for now, simple dict construction
+        try:
+             # Basic check: Missing keys?
+             # TypedDict doesn't complain on instantiation (it's a dict), 
+             # but static type checkers do. 
+             # We should probably validate required keys if possible, but let's keep it simple for now.
+             results.append(row_data) # type: ignore
+        except Exception as e:
+             errors.append(f"Row {row_idx + 1}: {str(e)}")
+
+    if errors:
+        raise TableValidationError(errors)
+
+    return results
+
+
+def _validate_table_dict(
+    table: "Table",
+    conversion_schema: ConversionSchema,
+) -> list[dict[str, Any]]:
+    """
+    Converts a Table to a list of dicts.
+    Keys are derived from headers.
+    """
+    normalized_headers = [normalize_header(h) for h in table.headers]
+    
+    # Use original header names or normalized?
+    # Usually users prefer original headers as keys if they passed 'dict'.
+    # But wait, validate_table usually normalizes.
+    # Let's use the actual header string from the table as the key, 
+    # but normalize for field_converter lookups.
+    
+    results = []
+    
+    for row in table.rows:
+        row_data = {}
+        for idx, cell_value in enumerate(row):
+            if idx < len(table.headers):
+                original_header = table.headers[idx]
+                key_for_conversion = normalize_header(original_header)
+                
+                # Check converters
+                if key_for_conversion in conversion_schema.field_converters:
+                    converter = conversion_schema.field_converters[key_for_conversion]
+                    try:
+                        val = converter(cell_value)
+                    except Exception:
+                        val = cell_value # Fallback or Raise? Let's fallback for raw dict
+                else:
+                    val = cell_value
+                
+                row_data[original_header] = val
+        results.append(row_data)
+        
+    return results
+
+
 def validate_table(
     table: "Table",
     schema_cls: Type[T],
@@ -211,4 +339,17 @@ def validate_table(
              raise TableValidationError(["Table has no headers"])
         return _validate_table_dataclass(table, schema_cls, conversion_schema)
 
-    raise ValueError(f"{schema_cls.__name__} must be a dataclass or Pydantic model")
+    # Check for TypedDict
+    if is_typeddict(schema_cls):
+        if not table.headers:
+             raise TableValidationError(["Table has no headers"])
+        return _validate_table_typeddict(table, schema_cls, conversion_schema)
+
+    # Check for simple dict
+    # We compare schema_cls against dict type
+    if schema_cls is dict:
+        if not table.headers:
+             raise TableValidationError(["Table has no headers"])
+        return _validate_table_dict(table, conversion_schema)
+
+    raise ValueError(f"{schema_cls} must be a dataclass, Pydantic model, TypedDict, or dict")

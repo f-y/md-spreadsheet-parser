@@ -28,13 +28,14 @@
     - [1. Basic Parsing](#1-basic-parsing)
     - [2. Type-Safe Validation](#2-type-safe-validation-recommended)
         - [Pydantic Integration](#pydantic-integration-optional)
-    - [3. JSON / Dict Export](#3-json--dict-export)
-    - [4. Markdown Generation](#4-markdown-generation-round-trip)
-    - [5. Advanced Features](#5-advanced-features)
-    - [6. Advanced Type Conversion](#6-advanced-type-conversion)
-    - [7. Robustness](#7-robustness-handling-malformed-tables)
-    - [8. In-Cell Line Break Support](#8-in-cell-line-break-support)
-    - [9. Performance & Scalability (Streaming API)](#9-performance--scalability-streaming-api)
+    - [3. JSON & Dictionary Conversion](#3-json--dictionary-conversion)
+    - [4. Pandas Integration & Export](#4-pandas-integration--export)
+    - [5. Markdown Generation](#5-markdown-generation-round-trip)
+    - [6. Advanced Features](#6-advanced-features)
+    - [7. Advanced Type Conversion](#7-advanced-type-conversion)
+    - [8. Robustness](#8-robustness-handling-malformed-tables)
+    - [9. In-Cell Line Break Support](#9-in-cell-line-break-support)
+    - [10. Performance & Scalability (Streaming API)](#10-performance--scalability-streaming-api)
     - [Command Line Interface (CLI)](#command-line-interface-cli)
 - [Configuration](#configuration)
 - [Future Roadmap](#future-roadmap)
@@ -167,7 +168,7 @@ except TableValidationError as e:
 *   **Optional Fields**: Handles `Optional[T]` by converting empty strings to `None`.
 *   **Validation**: Raises detailed errors if data doesn't match the schema.
 
-### Pydantic Integration (Optional)
+### Pydantic Integration
 
 For more advanced validation (email format, ranges, regex), you can use [Pydantic](https://docs.pydantic.dev/) models instead of dataclasses. This feature is enabled automatically if `pydantic` is installed.
 
@@ -185,23 +186,127 @@ users = parse_table(markdown).to_models(User)
 
 The parser respects Pydantic's `alias` and `Field` constraints.
 
-### 3. JSON / Dict Export
+The parser respects Pydantic's `alias` and `Field` constraints.
 
-All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary, making it easy to serialize or pass to other libraries (like Pandas).
+### 3. JSON & Dictionary Conversion
+
+Sometimes you don't want to define a full Dataclass or Pydantic model, or you have columns containing JSON strings.
+
+**Simple Dictionary Output**
+Convert tables directly to a list of dictionaries. Keys are derived from headers.
+
+```python
+# Returns list[dict[str, Any]] (Values are raw strings)
+rows = parse_table(markdown).to_models(dict)
+print(rows[0])
+# {'Name': 'Alice', 'Age': '30'}
+```
+
+**TypedDict Support**
+Use `TypedDict` for lightweight type safety. The parser uses the type annotations to convert values automatically.
+
+```python
+from typing import TypedDict
+
+class User(TypedDict):
+    name: str
+    age: int
+    active: bool
+
+rows = parse_table(markdown).to_models(User)
+print(rows[0])
+# {'name': 'Alice', 'age': 30, 'active': True}
+```
+
+**Column-Level JSON Parsing**
+If a field is typed as `dict` or `list` (in a Dataclass or Pydantic model), the parser **automatically parses the cell value as JSON**.
+
+```python
+@dataclass
+class Config:
+    id: int
+    metadata: dict  # Cell: '{"debug": true}' -> Parsed to dict
+    tags: list      # Cell: '["a", "b"]'      -> Parsed to list
+
+# Pydantic models also work without Json[] wrapper
+class ConfigModel(BaseModel):
+    metadata: dict
+```
+
+**Limitations:**
+*   **JSON Syntax**: The cell content must be valid JSON (e.g. double quotes `{"a": 1}`). Malformed JSON raises a `ValueError`.
+*   **Simple Dict Parsing**: `to_models(dict)` does *not* automatically parse inner JSON strings unless you use a custom schema. It only creates a shallow dictionary of strings.
+
+### 4. Pandas Integration & Export
+
+This library is designed to be a bridge between Markdown and Data Science tools like **Pandas**.
+
+**Convert to DataFrame (Easiest Way)**
+The cleanest way to create a DataFrame is using `to_models(dict)`. This returns a list of dictionaries that Pandas can ingest directly.
+
+```python
+import pandas as pd
+from md_spreadsheet_parser import parse_table
+
+markdown = """
+| Date       | Sales | Region |
+|------------|-------|--------|
+| 2023-01-01 | 100   | US     |
+| 2023-01-02 | 150   | EU     |
+"""
+
+table = parse_table(markdown)
+
+# 1. Convert to list of dicts
+data = table.to_models(dict)
+
+# 2. Create DataFrame
+df = pd.DataFrame(data)
+
+# 3. Post-Process: Convert types (Pandas usually infers strings initially)
+df["Sales"] = pd.to_numeric(df["Sales"])
+df["Date"] = pd.to_datetime(df["Date"])
+
+print(df.dtypes)
+# Date      datetime64[ns]
+# Sales              int64
+# Region            object
+```
+
+**Convert from Type-Safe Objects**
+If you want to validate data **before** creating a DataFrame (e.g., ensuring "Sales" is an integer during parsing), use a `dataclass` and then convert to Pandas.
+
+```python
+from dataclasses import dataclass, asdict
+
+@dataclass
+class SalesRecord:
+    date: str
+    amount: int
+    region: str
+
+# 1. Parse and Validate (Raises TableValidationError if invalid)
+records = parse_table(markdown).to_models(SalesRecord)
+
+# 2. Convert to DataFrame using asdict()
+df = pd.DataFrame([asdict(r) for r in records])
+
+# The 'amount' column is already int64 because validation handled conversion
+print(df["amount"].dtype) # int64
+```
+
+**JSON Export**
+All result objects (`Workbook`, `Sheet`, `Table`) have a `.json` property that returns a dictionary structure suitable for serialization.
 
 ```python
 import json
-import pandas as pd
 
-# Export to JSON
+# Export entire workbook structure
 print(json.dumps(workbook.json, indent=2))
-
-# Convert to Pandas DataFrame
-table_data = workbook.sheets[0].tables[0].json
-df = pd.DataFrame(table_data["rows"], columns=table_data["headers"])
 ```
 
-### 4. Markdown Generation (Round-Trip)
+
+### 5. Markdown Generation (Round-Trip)
 
 You can modify parsed objects and convert them back to Markdown strings using `to_markdown()`. This enables a complete "Parse -> Modify -> Generate" workflow.
 
@@ -224,7 +329,7 @@ print(table.to_markdown(schema))
 # | 3 | 4 |
 ```
 
-### 5. Advanced Features
+### 6. Advanced Features
 
 **Metadata Extraction (Table Names & Descriptions)**
 You can configure the parser to extract table names (from headers) and descriptions (text preceding the table).
@@ -296,7 +401,7 @@ print(len(tables))
 # 2
 ```
 
-### 6. Advanced Type Conversion
+### 7. Advanced Type Conversion
 
 You can customize how string values are converted to Python objects by passing a `ConversionSchema` to `to_models()`. This is useful for internationalization (I18N) and handling custom types.
 
@@ -425,7 +530,7 @@ schema = ConversionSchema(
 )
 ```
 
-### 7. Robustness (Handling Malformed Tables)
+### 8. Robustness (Handling Malformed Tables)
 
 The parser is designed to handle imperfect markdown tables gracefully.
 
@@ -450,7 +555,7 @@ print(table.rows)
 
 This ensures that `table.rows` always matches the structure of `table.headers`, preventing crashes during iteration or validation.
 
-### 8. In-Cell Line Break Support
+### 9. In-Cell Line Break Support
 
 The parser automatically converts HTML line breaks to Python newlines (`\n`). This enables handling multiline cells naturally.
 
@@ -470,7 +575,7 @@ When generating Markdown (e.g., `table.to_markdown()`), Python newlines (`\n`) a
 
 To disable this, set `convert_br_to_newline=False` in `ParsingSchema`.
 
-### 9. Performance & Scalability (Streaming API)
+### 10. Performance & Scalability (Streaming API)
 
 **Do you really have a 10GB Markdown file?**
 

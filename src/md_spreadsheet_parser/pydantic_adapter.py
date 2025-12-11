@@ -1,4 +1,5 @@
-from typing import Type, TYPE_CHECKING
+import json
+from typing import Type, TYPE_CHECKING, get_origin
 from pydantic import BaseModel, ValidationError as PydanticValidationError
 
 from .schemas import ConversionSchema
@@ -71,7 +72,42 @@ def validate_table_pydantic(
                     if cell_value.strip() == "":
                         row_data[target_key] = None
                     else:
-                        row_data[target_key] = cell_value
+                        # Pydantic JSON Pre-parsing
+                        # If field type is dict or list, try parsing as JSON
+                        # Pydantic v2 stores type in field_info.annotation
+                        val_to_set = cell_value
+                        
+                        # Find FieldInfo to check type
+                        # We have schema_cls.model_fields[name] -> FieldInfo
+                        # Need to find the NAME corresponding to target_key
+                        # Wait, target_key IS the field name (or alias) used in the dict.
+                        # But Pydantic accepts name OR alias.
+                        
+                        target_field_name = None
+                        if target_key in model_fields:
+                            target_field_name = target_key
+                        else:
+                             # Reverse lookup for alias?
+                             # In Pydantic v2, model_fields keys are attribute names.
+                             # If target_key matches alias, we need to find the attribute name to get type.
+                             for fname, f in model_fields.items():
+                                 if f.alias == target_key:
+                                     target_field_name = fname
+                                     break
+                                     
+                        if target_field_name:
+                            field_def = model_fields[target_field_name]
+                            ftype = field_def.annotation
+                            origin = get_origin(ftype)
+                            
+                            if (ftype is dict or ftype is list) or (origin is dict or origin is list):
+                                try:
+                                    val_to_set = json.loads(cell_value)
+                                except json.JSONDecodeError:
+                                    # Fallback: Let Pydantic validation handle it (might raise error or work if string is expected)
+                                    pass
+
+                        row_data[target_key] = val_to_set
 
         try:
             obj = schema_cls(**row_data)
