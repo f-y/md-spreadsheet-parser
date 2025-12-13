@@ -103,7 +103,8 @@ try:
     HAS_PYDANTIC = True
 except ImportError:
     HAS_PYDANTIC = False
-    BaseModel = None
+    HAS_PYDANTIC = False
+    BaseModel = None # type: ignore
 
 
 def _validate_table_dataclass(
@@ -115,10 +116,10 @@ def _validate_table_dataclass(
     Validates a Table using standard dataclasses.
     """
     # Map headers to fields
-    cls_fields = {f.name: f for f in fields(schema_cls)}
+    cls_fields = {f.name: f for f in fields(schema_cls)} # type: ignore
     header_map: dict[int, str] = {}  # column_index -> field_name
 
-    normalized_headers = [normalize_header(h) for h in table.headers]
+    normalized_headers = [normalize_header(h) for h in (table.headers or [])]
 
     for idx, header in enumerate(normalized_headers):
         if header in cls_fields:
@@ -144,7 +145,7 @@ def _validate_table_dataclass(
                         converted_value = converter(cell_value)
                     else:
                         converted_value = _convert_value(
-                            cell_value, field_def.type, conversion_schema
+                            cell_value, field_def.type, conversion_schema # type: ignore
                         )
                     row_data[field_name] = converted_value
                 except ValueError as e:
@@ -186,7 +187,7 @@ def _validate_table_typeddict(
     annotations = schema_cls.__annotations__
     
     header_map: dict[int, str] = {}
-    normalized_headers = [normalize_header(h) for h in table.headers]
+    normalized_headers = [normalize_header(h) for h in (table.headers or [])]
     
     # Map headers to TypedDict keys
     # Prioritize exact match, then normalized match
@@ -266,7 +267,7 @@ def _validate_table_dict(
     for row in table.rows:
         row_data = {}
         for idx, cell_value in enumerate(row):
-            if idx < len(table.headers):
+            if table.headers and idx < len(table.headers):
                 original_header = table.headers[idx]
                 key_for_conversion = normalize_header(original_header)
                 
@@ -313,7 +314,7 @@ def validate_table(
         # Import adapter lazily to avoid unused imports when pydantic is not used
         # (though we checked HAS_PYDANTIC so it exists)
         from .pydantic_adapter import validate_table_pydantic
-        return validate_table_pydantic(table, schema_cls, conversion_schema)
+        return validate_table_pydantic(table, schema_cls, conversion_schema) # type: ignore
 
     # Check for Dataclass
     if is_dataclass(schema_cls):
@@ -332,6 +333,6 @@ def validate_table(
     if schema_cls is dict:
         if not table.headers:
              raise TableValidationError(["Table has no headers"])
-        return _validate_table_dict(table, conversion_schema)
+        return _validate_table_dict(table, conversion_schema) # type: ignore
 
     raise ValueError(f"{schema_cls} must be a dataclass, Pydantic model, TypedDict, or dict")

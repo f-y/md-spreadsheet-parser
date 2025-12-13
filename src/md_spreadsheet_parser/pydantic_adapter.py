@@ -45,7 +45,7 @@ def validate_table_pydantic(
         else:
             lookup_map[normalize_header(name)] = name
 
-    normalized_headers = [normalize_header(h) for h in table.headers]
+    normalized_headers = [normalize_header(h) for h in (table.headers or [])]
 
     for idx, header in enumerate(normalized_headers):
         if header in lookup_map:

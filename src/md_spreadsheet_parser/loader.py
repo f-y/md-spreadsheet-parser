@@ -162,6 +162,7 @@ def scan_tables_iter(
             # New section starts. Yield previous buffer if any.
             yield from parse_and_yield(current_lines, current_name, block_start_line)
             
+            assert header_prefix is not None
             current_name = stripped_line[len(header_prefix):].strip()
             current_lines = []
             block_start_line = current_line_idx
