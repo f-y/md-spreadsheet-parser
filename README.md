@@ -601,6 +601,47 @@ for table in scan_tables_iter("huge_server_log.md"):
 
 This is ideal for data pipelines, log analysis, and processing exports that are too large to open in standard spreadsheet editors.
 
+### 11. Programmatic Manipulation
+
+The library provides immutable methods to modify the data structure. These methods return a **new instance** of the object with the changes applied, keeping the original object unchanged.
+
+**Workbook Operations**
+```python
+# Add a new sheet (creates a default table with headers A, B, C)
+new_wb = workbook.add_sheet("New Sheet")
+
+# Rename a sheet
+new_wb = workbook.rename_sheet(sheet_index=0, new_name("Budget 2024"))
+
+# Delete a sheet
+new_wb = workbook.delete_sheet(sheet_index=1)
+```
+
+**Sheet Operations**
+```python
+# Rename sheet (direct method)
+new_sheet = sheet.rename("Q1 Data")
+
+# Update table metadata
+new_sheet = sheet.update_table_metadata(
+    table_index=0, 
+    name="Expenses", 
+    description="Monthly expense report"
+)
+```
+
+**Table Operations**
+```python
+# Update a cell (automatically expands table if index is out of bounds)
+new_table = table.update_cell(row_idx=5, col_idx=2, value="Updated")
+
+# Delete a row (structural delete)
+new_table = table.delete_row(row_idx=2)
+
+# Clear column data (keeps headers and row structure, empties cells)
+new_table = table.clear_column_data(col_idx=3)
+```
+
 ### Command Line Interface (CLI)
 
 You can use the `md-spreadsheet-parser` command to parse Markdown files and output JSON. This is useful for piping data to other tools.

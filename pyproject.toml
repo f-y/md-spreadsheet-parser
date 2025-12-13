@@ -1,6 +1,6 @@
 [project]
 name = "md-spreadsheet-parser"
-version = "0.2.1"
+version = "0.2.4"
 description = "A lightweight, pure Python library for parsing Markdown tables"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -18,7 +18,7 @@ classifiers = [
 authors = [
     { name = "f-y" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = []
 
 [project.urls]

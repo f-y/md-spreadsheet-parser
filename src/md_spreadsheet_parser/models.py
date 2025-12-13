@@ -1,13 +1,19 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, TypedDict, TypeVar
 
-from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA, ConversionSchema, DEFAULT_CONVERSION_SCHEMA
-from .validation import validate_table
 from .generator import (
-    generate_table_markdown,
     generate_sheet_markdown,
+    generate_table_markdown,
     generate_workbook_markdown,
 )
+from .schemas import (
+    DEFAULT_CONVERSION_SCHEMA,
+    DEFAULT_SCHEMA,
+    ConversionSchema,
+    MultiTableParsingSchema,
+    ParsingSchema,
+)
+from .validation import validate_table
 
 T = TypeVar("T")
 
@@ -120,6 +126,99 @@ class Table:
         """
         return generate_table_markdown(self, schema)
 
+    def update_cell(self, row_idx: int, col_idx: int, value: str) -> "Table":
+        """
+        Return a new Table with the specified cell updated.
+        """
+        # Handle header update
+        if row_idx == -1:
+            if self.headers is None:
+                # Determine width from rows if possible, or start fresh
+                width = len(self.rows[0]) if self.rows else (col_idx + 1)
+                new_headers = [""] * width
+                # Ensure width enough
+                if col_idx >= len(new_headers):
+                    new_headers.extend([""] * (col_idx - len(new_headers) + 1))
+            else:
+                new_headers = list(self.headers)
+                if col_idx >= len(new_headers):
+                    new_headers.extend([""] * (col_idx - len(new_headers) + 1))
+
+            new_headers[col_idx] = value
+
+            return replace(self, headers=new_headers)
+
+        # Handle Body update
+        # 1. Ensure row exists
+        new_rows = [list(r) for r in self.rows]
+
+        # Grow rows if needed
+        if row_idx >= len(new_rows):
+            # Calculate width
+            width = (
+                len(self.headers)
+                if self.headers
+                else (len(new_rows[0]) if new_rows else 0)
+            )
+            if width == 0:
+                width = col_idx + 1  # At least cover the new cell
+
+            rows_to_add = row_idx - len(new_rows) + 1
+            for _ in range(rows_to_add):
+                new_rows.append([""] * width)
+
+        target_row = new_rows[row_idx]
+
+        # Grow cols if needed
+        if col_idx >= len(target_row):
+            target_row.extend([""] * (col_idx - len(target_row) + 1))
+
+        target_row[col_idx] = value
+
+        return replace(self, rows=new_rows)
+
+    def delete_row(self, row_idx: int) -> "Table":
+        """
+        Return a new Table with the row at index removed.
+        """
+        new_rows = [list(r) for r in self.rows]
+        if 0 <= row_idx < len(new_rows):
+            new_rows.pop(row_idx)
+        return replace(self, rows=new_rows)
+
+    def delete_column(self, col_idx: int) -> "Table":
+        """
+        Return a new Table with the column at index removed.
+        """
+        new_headers = list(self.headers) if self.headers else None
+        if new_headers and 0 <= col_idx < len(new_headers):
+            new_headers.pop(col_idx)
+
+        new_rows = []
+        for row in self.rows:
+            new_row = list(row)
+            if 0 <= col_idx < len(new_row):
+                new_row.pop(col_idx)
+            new_rows.append(new_row)
+
+        return replace(self, headers=new_headers, rows=new_rows)
+
+    def clear_column_data(self, col_idx: int) -> "Table":
+        """
+        Return a new Table with data in the specified column cleared (set to empty string),
+        but headers and column structure preserved.
+        """
+        # Headers remain unchanged
+
+        new_rows = []
+        for row in self.rows:
+            new_row = list(row)
+            if 0 <= col_idx < len(new_row):
+                new_row[col_idx] = ""
+            new_rows.append(new_row)
+
+        return replace(self, rows=new_rows)
+
 
 @dataclass(frozen=True)
 class Sheet:
@@ -219,3 +318,28 @@ class Workbook:
             str: The Markdown string.
         """
         return generate_workbook_markdown(self, schema)
+
+    def add_sheet(self, name: str) -> "Workbook":
+        """
+        Return a new Workbook with a new sheet added.
+        """
+        # Create new sheet with one empty table as default
+        new_table = Table(headers=["A", "B", "C"], rows=[["", "", ""]])
+        new_sheet = Sheet(name=name, tables=[new_table])
+
+        new_sheets = list(self.sheets)
+        new_sheets.append(new_sheet)
+
+        return replace(self, sheets=new_sheets)
+
+    def delete_sheet(self, index: int) -> "Workbook":
+        """
+        Return a new Workbook with the sheet at index removed.
+        """
+        if index < 0 or index >= len(self.sheets):
+            raise IndexError("Sheet index out of range")
+
+        new_sheets = list(self.sheets)
+        new_sheets.pop(index)
+
+        return replace(self, sheets=new_sheets)

@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
-from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA
+
+from .schemas import DEFAULT_SCHEMA, MultiTableParsingSchema, ParsingSchema
 
 if TYPE_CHECKING:
-    from .models import Table, Sheet, Workbook
+    from .models import Sheet, Table, Workbook
 
 
 def generate_table_markdown(
@@ -24,6 +25,7 @@ def generate_table_markdown(
     if isinstance(schema, MultiTableParsingSchema):
         if table.name and schema.table_header_level is not None:
             lines.append(f"{'#' * schema.table_header_level} {table.name}")
+            lines.append("")  # Empty line after name
 
         if table.description and schema.capture_description:
             lines.append(table.description)
@@ -121,6 +123,5 @@ def generate_workbook_markdown(
         lines.append(generate_sheet_markdown(sheet, schema))
         if i < len(workbook.sheets) - 1:
             lines.append("")  # Empty line between sheets
-            lines.append("")
 
     return "\n".join(lines)

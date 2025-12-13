@@ -1,9 +1,9 @@
 from md_spreadsheet_parser import (
-    Table,
-    Sheet,
-    Workbook,
-    ParsingSchema,
     MultiTableParsingSchema,
+    ParsingSchema,
+    Sheet,
+    Table,
+    Workbook,
 )
 
 
@@ -56,6 +56,7 @@ def test_table_to_markdown_with_metadata():
     markdown = table.to_markdown(schema)
 
     expected = """### MyTable
+
 This is a description.
 
 | Col1 | Col2 |
@@ -105,7 +106,6 @@ def test_workbook_to_markdown():
 | A |
 | --- |
 | 1 |
-
 
 ## Sheet2
 
