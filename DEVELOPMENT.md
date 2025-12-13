@@ -1,106 +1,90 @@
-# Developer Guide
+# Development Guide
 
-This document contains information for developers contributing to or maintaining the `md-spreadsheet-parser`.
+This document provides a comprehensive guide for developers contributing to `md-spreadsheet-parser`.
+It focuses on maintaining code quality, ensuring type safety, and following a consistent development workflow.
 
-## Project Overview
+## 1. Environment Setup
 
-This project is designed to be a lightweight, pure Python parser for Markdown tables. It is intended to be compiled into a `.whl` file and run within a WebAssembly environment (Pyodide) inside a VS Code extension.
+We use **[uv](https://github.com/astral-sh/uv)** for dependency management and virtual environments.
 
-### Key Design Principles
+### Prerequisites
+- Python 3.12+
+- `uv` installed
 
-1.  **Pure Python**: No C-extensions or heavy dependencies. Must run in Pyodide.
-2.  **Modular Schemas**: Parsing logic is controlled by `ParsingSchema` objects to support multiple Markdown flavors (GFM, etc.) in the future without rewriting core logic.
-3.  **Pure Functions**: The core `parse` function takes input and configuration and returns output without side effects.
-
-## Environment Setup
-
-This project uses `uv` for package management.
-
-1.  **Install uv**:
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
-
-2.  **Install Dependencies**:
-    ```bash
-    uv sync
-    ```
-
-## Development Workflow
-
-### Running Tests
-
-We use `pytest` for testing.
+### Setup Command
+Clone the repository and sync dependencies:
 
 ```bash
-uv run pytest
+git clone https://github.com/f-y/md-spreadsheet-parser.git
+cd md-spreadsheet-parser
+uv sync
 ```
+This creates a virtual environment in `.venv` with all dev dependencies (`pytest`, `ruff`, `mypy`, `pandas-stubs` etc.).
 
-### Type Checking
+## 2. Quality Assurance Tools
 
-This project is typed. Ensure `py.typed` is present in the package.
+We enforce strict quality standards using the following tools.
+**You must ensure all checks pass locally before opening a Pull Request.**
 
-### Documentation
+### Linting & Formatting (Ruff)
+We use `ruff` (configured in `pyproject.toml`) for both linting and formatting.
 
-This project uses `mkdocs` with `mkdocs-material` for documentation.
-
-To serve the documentation locally (auto-reloading):
 ```bash
-uv run mkdocs serve
-```
-
-To build the static documentation site (outputs to `site/`):
-```bash
-uv run mkdocs build
-```
-
-### Code Style & Linting
-
-We use `ruff` for linting and formatting.
-
-To check for linting errors:
-```bash
+# Check for lint errors
 uv run ruff check .
-```
 
-To format code:
-```bash
+# Auto-fix lint errors
+uv run ruff check --fix .
+
+# Check formatting
+uv run ruff format --check .
+
+# Auto-format code
 uv run ruff format .
 ```
 
-### Building the Package
-
-To create the `.whl` file for distribution (or for the VS Code extension):
+### Type Checking (Mypy)
+We use `mypy` for static type checking. The codebase is fully typed.
 
 ```bash
-uv run python -m build
+uv run mypy .
+```
+> **Note**: If you encounter missing stubs errors, ensure `pandas-stubs` is installed (it is included in `dev` dependencies).
+
+### Testing (Pytest)
+We use `pytest` for unit and integration testing.
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with coverage (optional)
+uv run pytest --cov=src
 ```
 
-The output will be in the `dist/` directory.
-- `dist/*.whl`: The wheel file to be used in the VS Code extension.
-- `dist/*.tar.gz`: Source distribution.
+## 3. Development Workflow
 
-## Integration with VS Code Extension
+### A. Implementing Features/Fixes
+1.  **Branching**: Create a feature branch from `main`.
+2.  **TDD**: Write a failing test case in `tests/` reproducing the bug or defining the new feature.
+3.  **Implement**: Write code to pass the test.
+4.  **Verify**: Run the full suite (`pytest`, `ruff`, `mypy`).
 
-1.  Build the wheel: `uv run python -m build`
-2.  Copy the generated `.whl` file to the `assets/` directory of the VS Code extension.
-3.  In the VS Code extension (TypeScript), use `micropip` to install the wheel into the Pyodide environment.
+### B. Project Structure
+- `src/md_spreadsheet_parser/`: Core library code.
+    - `schemas.py`: Configuration schemas (Dataclasses).
+    - `models.py`: Data structures (Table, Workbook).
+    - `parser.py`: Core parsing logic.
+    - `generator.py`: Markdown generation logic.
+    - `validation.py`: Type validation and conversion logic.
+- `tests/`: Test suite matching source structure.
 
-## Project Structure
+## 4. Pull Request Checklist
 
-```
-md-spreadsheet-parser/
-├── src/
-│   └── md_spreadsheet_parser/
-│       ├── parsing.py    # Pure parsing logic
-│       ├── loader.py     # File I/O and Streaming
-│       ├── validation.py # Validation and adapters
-│       ├── models.py     # Data structures
-│       ├── schemas.py    # Configuration
-│       └── __init__.py   # Public API exports
-├── tests/                # Pytest tests
-├── pyproject.toml        # Project configuration
-└── DEVELOPMENT.md        # This file
-```
+When submitting a PR, please confirm:
 
-
+- [ ] **Tests**: New tests added for new features? All existing tests pass?
+- [ ] **Linting**: `uv run ruff check .` passes with no errors?
+- [ ] **Formatting**: Code is formatted via `uv run ruff format .`?
+- [ ] **Typing**: `uv run mypy .` passes with "Success: no issues found"?
+- [ ] **Documentation**: `README.md` updated if public API changed?
