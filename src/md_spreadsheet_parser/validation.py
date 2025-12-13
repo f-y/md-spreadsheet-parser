@@ -1,3 +1,4 @@
+
 import json
 import types
 from dataclasses import fields, is_dataclass
@@ -6,6 +7,7 @@ from typing import Any, Type, TypeVar, get_origin, get_args, TYPE_CHECKING, is_t
 if TYPE_CHECKING:
     from .models import Table
 from .utils import normalize_header
+from .schemas import ConversionSchema, DEFAULT_CONVERSION_SCHEMA
 
 T = TypeVar("T")
 
@@ -23,7 +25,6 @@ class TableValidationError(Exception):
         )
 
 
-from .schemas import ConversionSchema, DEFAULT_CONVERSION_SCHEMA
 
 def _convert_value(
     value: str, target_type: Type, schema: ConversionSchema = DEFAULT_CONVERSION_SCHEMA
@@ -252,7 +253,7 @@ def _validate_table_dict(
     Converts a Table to a list of dicts.
     Keys are derived from headers.
     """
-    normalized_headers = [normalize_header(h) for h in table.headers]
+    # normalized_headers = [normalize_header(h) for h in table.headers]
     
     # Use original header names or normalized?
     # Usually users prefer original headers as keys if they passed 'dict'.

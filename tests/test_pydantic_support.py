@@ -1,5 +1,5 @@
 import pytest
-from pydantic import BaseModel, Field, EmailStr, ValidationError as PydanticValidationError
+from pydantic import BaseModel, Field
 from typing import Optional
 from md_spreadsheet_parser import parse_table, TableValidationError
 

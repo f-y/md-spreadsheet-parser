@@ -1,4 +1,3 @@
-import pytest
 from md_spreadsheet_parser import parse_table, ParsingSchema
 
 def test_br_conversion_basic():

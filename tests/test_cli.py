@@ -1,9 +1,6 @@
 import json
 import subprocess
-import sys
-from pathlib import Path
 
-import pytest
 
 CLI_CMD = ["uv", "run", "md-spreadsheet-parser"]
 

@@ -1,5 +1,5 @@
 import json
-from typing import Type, TYPE_CHECKING, get_origin
+from typing import Type, get_origin
 from pydantic import BaseModel, ValidationError as PydanticValidationError
 
 from .schemas import ConversionSchema

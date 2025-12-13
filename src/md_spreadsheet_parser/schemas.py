@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Callable, Any
 
 
 @dataclass(frozen=True)
@@ -49,9 +50,6 @@ class MultiTableParsingSchema(ParsingSchema):
                 "capture_description=True requires table_header_level to be set"
             )
 
-
-from typing import Callable, Any
-from dataclasses import field
 
 @dataclass(frozen=True)
 class ConversionSchema:

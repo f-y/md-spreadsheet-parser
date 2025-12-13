@@ -1,10 +1,10 @@
 
-import json
 import pytest
 from dataclasses import dataclass
-from typing import TypedDict, Any, List, Dict, Optional
+from typing import TypedDict
 from md_spreadsheet_parser.models import Table
 from md_spreadsheet_parser.validation import TableValidationError
+from md_spreadsheet_parser.models import Sheet, Workbook
 
 # Mock Pydantic availability
 try:
@@ -44,8 +44,8 @@ def test_to_models_typeddict():
     assert len(result) == 2
     assert result[0]["name"] == "Alice"
     assert result[0]["age"] == 30
-    assert result[0]["active"] == True
-    assert result[1]["active"] == False
+    assert result[0]["active"] is True
+    assert result[1]["active"] is False
 
 # --- 3. Dataclass Column JSON ---
 @dataclass
@@ -112,7 +112,7 @@ if HAS_PYDANTIC:
             table.to_models(ConfigModel)
 
 # --- 5. JSON Property Export (Serialization) ---
-from md_spreadsheet_parser.models import Sheet, Workbook
+# from md_spreadsheet_parser.models import Sheet, Workbook
 
 def test_json_property_structure():
     headers = ["Name", "Score"]

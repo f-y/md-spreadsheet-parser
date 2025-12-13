@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, TypedDict, TypeVar
 
-T = TypeVar("T")
-
 from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA, ConversionSchema, DEFAULT_CONVERSION_SCHEMA
 from .validation import validate_table
 from .generator import (
@@ -10,6 +8,8 @@ from .generator import (
     generate_sheet_markdown,
     generate_workbook_markdown,
 )
+
+T = TypeVar("T")
 
 
 class TableJSON(TypedDict):

@@ -120,7 +120,7 @@ def scan_tables_iter(
         
         # Split description vs table
         # We need list of lines stripped of newline for index finding
-        stripped_lines = [l.rstrip("\n") for l in lines]
+        stripped_lines = [line_val.rstrip("\n") for line_val in lines]
         
         table_start_idx = -1
         for idx, line in enumerate(stripped_lines):

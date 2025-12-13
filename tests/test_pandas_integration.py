@@ -1,7 +1,6 @@
 
 import pytest
 from md_spreadsheet_parser.models import Table
-from md_spreadsheet_parser.validation import TableValidationError
 
 try:
     import pandas as pd

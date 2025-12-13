@@ -48,7 +48,7 @@ def test_datetime_factory_timezone_attach():
 
 def test_datetime_factory_timezone_convert():
     tokyo = ZoneInfo("Asia/Tokyo")
-    utc = ZoneInfo("UTC")
+    # utc = ZoneInfo("UTC")
     
     # Convert logic: Input Aware (UTC) -> Output (Tokyo)
     input_str = "2023-01-01T00:00:00+00:00" # Midnight UTC

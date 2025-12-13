@@ -1,5 +1,4 @@
 import tempfile
-import pytest
 from md_spreadsheet_parser import scan_tables_iter, MultiTableParsingSchema
 
 def test_streaming_from_iterable():
