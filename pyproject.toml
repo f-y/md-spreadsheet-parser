@@ -1,7 +1,7 @@
 [project]
 name = "md-spreadsheet-parser"
-version = "0.3.0"
-description = "A lightweight, pure Python library for parsing Markdown tables"
+version = "0.3.1"
+description = "A robust Markdown table parser and generator with metadata support"
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = ["markdown", "table", "parser", "spreadsheet", "pandas", "csv"]
