@@ -61,7 +61,11 @@ To ensure accurate and comprehensive release notes, we use a **Fragment-based** 
 When you implement a feature or fix a bug:
 1.  Create a new Markdown file in `docs/changes/next/`.
 2.  Name the file `<issue_id>.<type>.md` (or `<short_desc>.<type>.md` if no issue).
-    - Types: `feature`, `fix`, `docs`, `breaking`.
+    - Types:
+        - `feature`: New functionality (implies **Minor** version bump).
+        - `fix`: Bug fix (implies **Patch** version bump).
+        - `docs`: Documentation improvements.
+        - `breaking`: Backward incompatible changes (implies **Major** version bump).
     - Example: `123.feature.md` or `metadata-persistence.fix.md`.
 3.  Write a clear, user-facing summary of the change in the file.
 
