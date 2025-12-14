@@ -77,9 +77,18 @@ uv run pytest --cov=src
     - `parser.py`: Core parsing logic.
     - `generator.py`: Markdown generation logic.
     - `validation.py`: Type validation and conversion logic.
-- `tests/`: Test suite matching source structure.
+- `tests/`: Structured test suite (see [Test Architecture](#5-test-architecture)).
 
-## 4. Pull Request Checklist
+## 5. Test Architecture
+
+The test suite is structured to categorize tests by their architectural role, ensuring scalability and clarity. We follow a **layered testing strategy**:
+
+*   **`tests/core/`**: **Core Logic**. Tests for the fundamental parsing and generation capabilities (Parsing, Generator, Models). These verify the library's primary responsibility: `Markdown <-> Object`.
+*   **`tests/features/`**: **Feature Subsystems**. Tests for distinct, isolated features that extend the core (Metadata systems, Streaming, CLI, Validation).
+*   **`tests/integrations/`**: **Ecosystem Adapters**. Tests verifying compatibility with external libraries (Pandas, Pydantic, JSON) to ensure the library fits into the broader Python data ecosystem.
+*   **`tests/scenarios/`**: **Quality Assurance**. Tests specifically designed to break the parser (Malformed inputs, Edge cases, Fuzzing-like mixed inputs) to ensure robustness without cluttering functional tests.
+
+## 6. Pull Request Checklist
 
 When submitting a PR, please confirm:
 

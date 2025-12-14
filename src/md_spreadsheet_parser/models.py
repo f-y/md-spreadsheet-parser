@@ -219,6 +219,63 @@ class Table:
 
         return replace(self, rows=new_rows)
 
+    def insert_row(self, row_idx: int) -> "Table":
+        """
+        Return a new Table with an empty row inserted at row_idx.
+        Subsequent rows are shifted down.
+        """
+        new_rows = [list(r) for r in self.rows]
+
+        # Determine width
+        width = (
+            len(self.headers) if self.headers else (len(new_rows[0]) if new_rows else 0)
+        )
+        if width == 0:
+            width = 1  # Default to 1 column if table is empty
+
+        new_row = [""] * width
+
+        if row_idx < 0:
+            row_idx = 0
+        if row_idx > len(new_rows):
+            row_idx = len(new_rows)
+
+        new_rows.insert(row_idx, new_row)
+        return replace(self, rows=new_rows)
+
+    def insert_column(self, col_idx: int) -> "Table":
+        """
+        Return a new Table with an empty column inserted at col_idx.
+        Subsequent columns are shifted right.
+        """
+        new_headers = list(self.headers) if self.headers else None
+
+        if new_headers:
+            if col_idx < 0:
+                col_idx = 0
+            if col_idx > len(new_headers):
+                col_idx = len(new_headers)
+            new_headers.insert(col_idx, "")
+
+        new_rows = []
+        for row in self.rows:
+            new_row = list(row)
+            # Ensure row is long enough before insertion logic?
+            # Or just insert.
+            # If col_idx is way past end, we might need padding?
+            # Standard list.insert handles index > len -> append.
+            current_len = len(new_row)
+            target_idx = col_idx
+            if target_idx > current_len:
+                # Pad up to target
+                new_row.extend([""] * (target_idx - current_len))
+                target_idx = len(new_row)  # Append
+
+            new_row.insert(target_idx, "")
+            new_rows.append(new_row)
+
+        return replace(self, headers=new_headers, rows=new_rows)
+
 
 @dataclass(frozen=True)
 class Sheet:

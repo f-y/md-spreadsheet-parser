@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING
 
 from .schemas import DEFAULT_SCHEMA, MultiTableParsingSchema, ParsingSchema
@@ -69,6 +70,13 @@ def generate_table_markdown(
         if schema.require_outer_pipes:
             row_str = f"{schema.column_separator} {row_str} {schema.column_separator}"
         lines.append(row_str)
+
+    # Append Metadata if present
+    if table.metadata and "visual" in table.metadata:
+        metadata_json = json.dumps(table.metadata["visual"])
+        comment = f"<!-- md-spreadsheet-metadata: {metadata_json} -->"
+        lines.append("")
+        lines.append(comment)
 
     return "\n".join(lines)
 

@@ -1,8 +1,9 @@
+import json
 import re
 from dataclasses import replace
 
-from .models import Table, Workbook, Sheet
-from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA
+from .models import Sheet, Table, Workbook
+from .schemas import DEFAULT_SCHEMA, MultiTableParsingSchema, ParsingSchema
 
 
 def clean_cell(cell: str, schema: ParsingSchema) -> str:
@@ -89,6 +90,7 @@ def parse_table(markdown: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
     lines = markdown.strip().split("\n")
     headers: list[str] | None = None
     rows: list[list[str]] = []
+    visual_metadata: dict | None = None
 
     # Buffer for potential header row until we confirm it's a header with a separator
     potential_header: list[str] | None = None
@@ -97,6 +99,23 @@ def parse_table(markdown: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
         line = line.strip()
         if not line:
             continue
+
+        # Check for metadata comment
+        metadata_match = re.match(r"^<!-- md-spreadsheet-metadata: (.*) -->$", line)
+        if metadata_match:
+            try:
+                json_content = metadata_match.group(1)
+                visual_metadata = json.loads(json_content)
+                continue
+            except json.JSONDecodeError:
+                # If invalid JSON, treat as normal text/comment (or ignore?)
+                # For robustness, we ignore it as metadata but let parse_row handle it or skip?
+                # Usually comments are ignored by parse_row if they don't look like tables?
+                # parse_row will likely return ["<!-- ... -->"].
+                # If we want to hide it from table data, we should continue here even if error?
+                # User constraint: "if user manually edits... handle gracefully".
+                # Let's log/ignore and continue, effectively stripping bad metadata lines from table data.
+                continue
 
         parsed_row = parse_row(line, schema)
 
@@ -134,7 +153,11 @@ def parse_table(markdown: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
             normalized_rows.append(row)
         rows = normalized_rows
 
-    return Table(headers=headers, rows=rows, metadata={"schema_used": str(schema)})
+    metadata = {"schema_used": str(schema)}
+    if visual_metadata:
+        metadata["visual"] = visual_metadata
+
+    return Table(headers=headers, rows=rows, metadata=metadata)
 
 
 def _extract_tables_simple(
@@ -153,7 +176,10 @@ def _extract_tables_simple(
             if current_block:
                 # Process block
                 block_text = "\n".join(current_block)
-                if schema.column_separator in block_text:
+                if (
+                    schema.column_separator in block_text
+                    or "<!-- md-spreadsheet-metadata:" in block_text
+                ):
                     table = parse_table(block_text, schema)
                     if table.rows or table.headers:
                         table = replace(
@@ -162,7 +188,18 @@ def _extract_tables_simple(
                             end_line=start_line_offset + idx,
                         )
                         tables.append(table)
+                    elif table.metadata and "visual" in table.metadata and tables:
+                        last_table = tables[-1]
+                        current_vis = last_table.metadata.get("visual", {})
+                        new_vis = current_vis.copy()
+                        new_vis.update(table.metadata["visual"])
+
+                        updated_md = last_table.metadata.copy()
+                        updated_md["visual"] = new_vis
+
+                        tables[-1] = replace(last_table, metadata=updated_md)
                 current_block = []
+                # Tables that are only metadata (and no previous table) are ignored (orphan)
             block_start = idx + 1
         else:
             if not current_block:
@@ -172,7 +209,10 @@ def _extract_tables_simple(
     # Last block
     if current_block:
         block_text = "\n".join(current_block)
-        if schema.column_separator in block_text:
+        if (
+            schema.column_separator in block_text
+            or "<!-- md-spreadsheet-metadata:" in block_text
+        ):
             table = parse_table(block_text, schema)
             if table.rows or table.headers:
                 table = replace(
@@ -181,6 +221,16 @@ def _extract_tables_simple(
                     end_line=start_line_offset + len(lines),
                 )
                 tables.append(table)
+            elif table.metadata and "visual" in table.metadata and tables:
+                last_table = tables[-1]
+                current_vis = last_table.metadata.get("visual", {})
+                new_vis = current_vis.copy()
+                new_vis.update(table.metadata["visual"])
+
+                updated_md = last_table.metadata.copy()
+                updated_md["visual"] = new_vis
+
+                tables[-1] = replace(last_table, metadata=updated_md)
 
     return tables
 
@@ -209,7 +259,7 @@ def _extract_tables(
     def process_table_block(end_line_idx: int):
         if not current_table_lines:
             return
-            
+
         # Try to separate description from table content
         # Simple heuristic: find the first line that looks like a table row
         table_start_idx = -1
@@ -221,28 +271,34 @@ def _extract_tables(
         if table_start_idx != -1:
             # Description is everything before table start
             desc_lines = (
-                current_description_lines
-                + current_table_lines[:table_start_idx]
+                current_description_lines + current_table_lines[:table_start_idx]
             )
-            
+
             # Content is everything after (and including) table start
             content_lines = current_table_lines[table_start_idx:]
-            
+
             # Logic adjustment:
             # If named, content starts at header_line + 1.
             # If unnamed, content starts at current_block_start_line.
             offset_correction = 1 if current_table_name else 0
-            
+
             # Absolute start line of the content part
-            abs_content_start = start_line_offset + current_block_start_line + offset_correction + table_start_idx
+            abs_content_start = (
+                start_line_offset
+                + current_block_start_line
+                + offset_correction
+                + table_start_idx
+            )
 
             # Parse tables from the content lines
-            block_tables = _extract_tables_simple(content_lines, schema, abs_content_start)
+            block_tables = _extract_tables_simple(
+                content_lines, schema, abs_content_start
+            )
 
             if block_tables:
                 # The first table found gets the name and description
                 first_table = block_tables[0]
-                
+
                 description = (
                     "\n".join(line.strip() for line in desc_lines if line.strip())
                     if schema.capture_description
@@ -252,12 +308,10 @@ def _extract_tables(
                     description = None
 
                 first_table = replace(
-                    first_table,
-                    name=current_table_name,
-                    description=description
+                    first_table, name=current_table_name, description=description
                 )
                 block_tables[0] = first_table
-                
+
                 # Append all found tables
                 tables.extend(block_tables)
 
@@ -279,7 +333,10 @@ def _extract_tables(
 
 
 def parse_sheet(
-    markdown: str, name: str, schema: MultiTableParsingSchema, start_line_offset: int = 0
+    markdown: str,
+    name: str,
+    schema: MultiTableParsingSchema,
+    start_line_offset: int = 0,
 ) -> Sheet:
     """
     Parse a sheet (section) containing one or more tables.
