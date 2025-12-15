@@ -7,6 +7,7 @@
   <a href="https://pypi.org/project/md-spreadsheet-parser/">
     <img src="https://img.shields.io/badge/pypi-v0.3.0-blue" alt="PyPI" />
   </a>
+  <a href="https://pepy.tech/projects/md-spreadsheet-parser"><img src="https://static.pepy.tech/personalized-badge/md-spreadsheet-parser?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads" alt="PyPI Downloads"></a>
   <a href="https://github.com/f-y/md-spreadsheet-parser">
     <img src="https://img.shields.io/badge/repository-github-green.svg" alt="Repository" />
   </a>
