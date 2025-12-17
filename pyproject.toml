@@ -1,6 +1,6 @@
 [project]
 name = "md-spreadsheet-parser"
-version = "0.3.2"
+version = "0.3.1"
 description = "A robust Markdown table parser and generator with metadata support"
 readme = "README.md"
 license = { file = "LICENSE" }
