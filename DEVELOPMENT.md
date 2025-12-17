@@ -70,28 +70,15 @@ When you implement a feature or fix a bug:
 3.  Write a clear, user-facing summary of the change in the file.
 
 #### Release Process
-The release process is fully automated via `scripts/release.py` in the monorepo root.
+The release process is handled by the maintainers using internal automation tools.
 
-1.  **Dry Run**: Verification and note generation preview.
-    ```bash
-    uv run scripts/release.py --bump patch --dry-run
-    ```
-2.  **Release to TestPyPI**:
-    ```bash
-    uv run scripts/release.py --bump patch --target testpypi --publish
-    ```
-    This command automatically:
-    - Collects fragments and generates release notes.
-    - Updates `pyproject.toml`, `README.md`, and `CHANGELOG.md`.
-    - commits, tags, and creates a GitHub Release.
-    - Archives fragments to `docs/changes/archive/`.
-    - Publishes to TestPyPI.
+When a release is triggered:
+1.  **Fragment Collection**: Validation and collection of all fragment files from `docs/changes/next/`.
+2.  **Changelog Generation**: These fragments are compiled into the `CHANGELOG.md`.
+3.  **Cleanup**: The used fragments are archived to `docs/changes/archive/`.
+4.  **Publishing**: The package is tagged and published to PyPI.
 
-3.  **Release to PyPI**:
-    After verification, release the same version to PyPI:
-    ```bash
-    uv run scripts/release.py --target pypi --publish
-    ```
+As a contributor, you only need to ensure your changes are accompanied by a correct fragment file.
 
 ### Testing (Pytest)
 We use `pytest` for unit and integration testing.
