@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.3] - 2025-12-19
+
+### 🐛 Bug Fixes
+
+### Fixed Docs Links for PyPI
+
+Updated `README.md` to use absolute GitHub URLs for the Cookbook and License. This ensures links work correctly when viewed on the PyPI project page (which does not host the relative files).
+
+### 📚 Documentation
+
+### Added Cookbook to Documentation
+
+Integrated the new `COOKBOOK.md` into the MkDocs site navigation for better accessibility.
+
 ## [0.3.2] - 2025-12-19
 
 ### 📚 Documentation
