@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.2] - 2025-12-21
+
+### 📚 Documentation
+
+Update PyPI package keywords to improve discoverability for Excel-related and zero-dependency use cases.
+
 ## [0.4.1] - 2025-12-21
 
 ### 📚 Documentation
