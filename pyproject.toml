@@ -4,7 +4,19 @@ version = "0.4.1"
 description = "A robust, zero-dependency Python library for parsing, validating, and manipulating Markdown tables, including conversion from Excel to Markdown."
 readme = "README.md"
 license = { file = "LICENSE" }
-keywords = ["markdown", "table", "parser", "spreadsheet", "pandas", "csv"]
+keywords = [
+    "markdown",
+    "table",
+    "parser",
+    "spreadsheet",
+    "excel",
+    "csv",
+    "pandas",
+    "dataframe",
+    "conversion",
+    "cli",
+    "zero-dependency",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
