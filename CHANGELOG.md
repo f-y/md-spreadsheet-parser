@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0] - 2025-12-21
+
+### 🐛 Bug Fixes
+
+Fix bug where headers in markdown code blocks were incorrectly interpreted as document structure (e.g., `# Tables` or `## Sheet 1` inside a code block). The parser now correctly ignores any headers inside fenced code blocks.
+
 ## [0.3.3] - 2025-12-19
 
 ### 🐛 Bug Fixes
