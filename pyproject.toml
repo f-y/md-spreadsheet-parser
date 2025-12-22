@@ -35,6 +35,7 @@ dependencies = []
 Homepage = "https://f-y.github.io/md-spreadsheet-parser/"
 Repository = "https://github.com/f-y/md-spreadsheet-parser"
 Issues = "https://github.com/f-y/md-spreadsheet-parser/issues"
+Changelog = "https://github.com/f-y/md-spreadsheet-parser/releases"
 
 [project.scripts]
 md-spreadsheet-parser = "md_spreadsheet_parser.cli:main"

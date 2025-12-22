@@ -15,6 +15,7 @@ def test_pipes_inside_inline_code():
     table = parse_table(markdown)
 
     # Needs to be 2 columns
+    assert table.headers is not None
     assert len(table.headers) == 2
 
     # Row 0: `|`, Normal
@@ -47,9 +48,9 @@ def test_pipes_inside_inline_code_mixed():
 
 def test_escaped_pipes_vs_code_pipes():
     """
-    Test that escaped pipes `\|` and code pipes `` `|` `` coexist.
+    Test that escaped pipes `\\|` and code pipes `` `|` `` coexist.
     """
-    markdown = """
+    markdown = r"""
 | A | B |
 | - | - |
 | \| | `|` |
