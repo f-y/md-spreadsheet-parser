@@ -32,6 +32,7 @@
 - [Installation](#installation)
 - [Usage](#usage)
     - [1. Basic Parsing](#1-basic-parsing)
+    - [GFM Feature Support](#gfm-feature-support)
     - [2. Type-Safe Validation](#2-type-safe-validation-recommended)
         - [Pydantic Integration](#pydantic-integration)
     - [3. JSON & Dictionary Conversion](#3-json--dictionary-conversion)
