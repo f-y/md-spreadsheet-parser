@@ -55,6 +55,7 @@
 - **Type-Safe Validation**: Convert loose Markdown tables into strongly-typed Python `dataclasses` with automatic type conversion, including customizable boolean logic (I18N) and custom type converters.
 - **Markdown as a Database**: Treat your Markdown files as Git-managed configuration or master data. Validate schema and types automatically, preventing human error in handwritten tables.
 - **Round-Trip Support**: Parse to objects, modify data, and generate Markdown back. Perfect for editors.
+- **GFM Compliance**: Supports GitHub Flavored Markdown (GFM) specifications, including column alignment (`:--`, `:--:`, `--:`) and correct handling of pipes within inline code (`` `|` ``).
 - **Robust Parsing**: Gracefully handles malformed tables (missing/extra columns) and escaped characters.
 - **Multi-Table Workbooks**: Support for parsing multiple sheets and tables from a single file, including metadata.
 - **JSON & Dict Support**: Column-level JSON parsing and direct conversion to `dict`/`TypedDict`.
@@ -195,6 +196,37 @@ Available helpers:
 - `parse_table_from_file(path_or_file)`
 - `parse_workbook_from_file(path_or_file)`
 - `scan_tables_from_file(path_or_file)`
+
+### GFM Feature Support
+
+The parser strictly adheres to GitHub Flavored Markdown (GFM) specifications for tables.
+
+**Column Alignment**
+Alignment markers in the separator row are parsed and preserved.
+
+```python
+markdown = """
+| Left | Center | Right |
+| :--- | :----: | ----: |
+| 1    | 2      | 3     |
+"""
+table = parse_table(markdown)
+print(table.alignments)
+# ["left", "center", "right"]
+```
+
+**Pipes in Code & Escaping**
+Pipes `|` inside inline code blocks (backticks) or escaped with `\` are correctly treated as content, not column separators.
+
+```python
+markdown = """
+| Code  | Escaped |
+| ----- | ------- |
+| `a|b` | \|      |
+"""
+table = parse_table(markdown)
+# table.rows[0] == ["`a|b`", "|"]
+```
 
 ### 2. Type-Safe Validation (Recommended)
 
