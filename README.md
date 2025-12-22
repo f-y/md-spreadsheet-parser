@@ -5,7 +5,7 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
   </a>
   <a href="https://pypi.org/project/md-spreadsheet-parser/">
-    <img src="https://img.shields.io/badge/pypi-v0.4.2-blue" alt="PyPI" />
+    <img src="https://img.shields.io/badge/pypi-v0.4.3-blue" alt="PyPI" />
   </a>
   <a href="https://pepy.tech/projects/md-spreadsheet-parser"><img src="https://static.pepy.tech/personalized-badge/md-spreadsheet-parser?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=BLUE&left_text=downloads" alt="PyPI Downloads"></a>
   <a href="https://github.com/f-y/md-spreadsheet-parser">
@@ -51,8 +51,9 @@
 
 ## Features
 
-- **Pure Python & Zero Dependencies**: Lightweight and portable. Runs anywhere Python runs, including **WebAssembly (Pyodide)**.
+- **Pure Python & Zero Dependencies**: Lightweight and portable. Perfect for **AWS Lambda Layers** and constrained environments. Runs anywhere Python runs, including **WebAssembly (Pyodide)**.
 - **Type-Safe Validation**: Convert loose Markdown tables into strongly-typed Python `dataclasses` with automatic type conversion, including customizable boolean logic (I18N) and custom type converters.
+- **Markdown as a Database**: Treat your Markdown files as Git-managed configuration or master data. Validate schema and types automatically, preventing human error in handwritten tables.
 - **Round-Trip Support**: Parse to objects, modify data, and generate Markdown back. Perfect for editors.
 - **Robust Parsing**: Gracefully handles malformed tables (missing/extra columns) and escaped characters.
 - **Multi-Table Workbooks**: Support for parsing multiple sheets and tables from a single file, including metadata.

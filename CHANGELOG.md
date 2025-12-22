@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.3] - 2025-12-22
+
+### 📚 Documentation
+
+Updated README.md to highlight suitability for AWS Lambda (Zero Dependency) and the "Markdown as Database" concept based on user feedback.
+---
+type: docs
+---
+
+Added `mkdocs-git-revision-date-localized-plugin` to generate accurate `lastmod` dates in `sitemap.xml` for better SEO and Google Search Console integration.
+
 ## [0.4.2] - 2025-12-21
 
 ### 📚 Documentation
