@@ -128,6 +128,8 @@ print(table.to_markdown())
 
 ### Excel (TSV/CSV) → Markdown
 
+**This is the easiest method!** Just copy cells from Excel and paste them as a string.
+
 Convert Excel-exported TSV or CSV data to Markdown. Handles merged headers and in-cell newlines.
 
 ```python
