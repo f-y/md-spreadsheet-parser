@@ -110,35 +110,57 @@ print(table.to_markdown())
 # | 2 | Bob |
 ```
 
-### Excel (TSV) -> Markdown
+### Excel (.xlsx) → Markdown (with openpyxl)
 
-One-off script to convert pasted Excel data (TSV) into a Markdown table. Handles quoted values and in-cell newlines correctly.
+If you have `openpyxl` installed, you can pass Worksheets directly.
 
 ```python
-import csv
-import io
-from md_spreadsheet_parser import Table
+# pip install openpyxl  # User-managed dependency
+import openpyxl
+from md_spreadsheet_parser import parse_excel, ExcelParsingSchema
 
-# Paste your Excel data here
+wb = openpyxl.load_workbook("report.xlsx", data_only=True)
+ws = wb["SalesData"]  # Select sheet by name
+
+table = parse_excel(ws, ExcelParsingSchema(header_rows=2))
+print(table.to_markdown())
+```
+
+### Excel (TSV/CSV) → Markdown
+
+Convert Excel-exported TSV or CSV data to Markdown. Handles merged headers and in-cell newlines.
+
+```python
+from md_spreadsheet_parser import parse_excel, ExcelParsingSchema
+
+# Paste your Excel data (TSV format)
 tsv_data = """
-ID	Name	Notes
-1	Alice	"Lines
+ID\tName\tNotes
+1\tAlice\t"Lines
 include
 newlines"
-2	Bob	Simple
+2\tBob\tSimple
 """.strip()
 
-# Use csv module for robust parsing
-reader = csv.reader(io.StringIO(tsv_data), delimiter='\t')
-rows = list(reader)
+table = parse_excel(tsv_data)
+print(table.to_markdown())
+```
 
-if rows:
-    headers = rows[0]
-    data_rows = rows[1:]
-    
-    # Generate Markdown
-    table = Table(headers=headers, rows=data_rows)
-    print(table.to_markdown())
+**With Merged Headers (Forward-Fill)**
+```python
+# Excel merged cells export as: "Category\t\t\tInfo"
+tsv = "Category\t\t\tInfo\nA\tB\tC\tD"
+table = parse_excel(tsv)
+# Headers: ["Category", "Category", "Category", "Info"]
+```
+
+**With 2-Row Hierarchical Headers**
+```python
+# Parent row: "Info\t\tMetrics\t"
+# Child row:  "Name\tID\tScore\tRank"
+tsv = "Info\t\tMetrics\t\nName\tID\tScore\tRank\nAlice\t001\t95\t1"
+table = parse_excel(tsv, ExcelParsingSchema(header_rows=2))
+# Headers: ["Info - Name", "Info - ID", "Metrics - Score", "Metrics - Rank"]
 ```
 
 ## 5. Programmatic Editing (Excel-like)

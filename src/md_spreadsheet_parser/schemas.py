@@ -79,3 +79,30 @@ class ConversionSchema:
 
 
 DEFAULT_CONVERSION_SCHEMA = ConversionSchema()
+
+
+@dataclass(frozen=True)
+class ExcelParsingSchema:
+    """
+    Configuration for parsing Excel-exported data (TSV/CSV or openpyxl).
+
+    Attributes:
+        header_rows: Number of header rows (1 or 2).
+                     If 2, headers are flattened to "Parent - Child" format.
+        fill_merged_headers: Whether to forward-fill empty header cells
+                             (for merged cells in Excel exports).
+        delimiter: Column separator for TSV/CSV parsing. Default is tab.
+        header_separator: Separator used when flattening 2-row headers.
+    """
+
+    header_rows: int = 1
+    fill_merged_headers: bool = True
+    delimiter: str = "\t"
+    header_separator: str = " - "
+
+    def __post_init__(self):
+        if self.header_rows not in (1, 2):
+            raise ValueError("header_rows must be 1 or 2")
+
+
+DEFAULT_EXCEL_SCHEMA = ExcelParsingSchema()

@@ -16,6 +16,8 @@ from .schemas import (
     MultiTableParsingSchema,
     ConversionSchema,
     DEFAULT_CONVERSION_SCHEMA,
+    ExcelParsingSchema,
+    DEFAULT_EXCEL_SCHEMA,
 )
 from .models import (
     Table,
@@ -27,6 +29,10 @@ from .generator import (
     generate_table_markdown,
     generate_sheet_markdown,
     generate_workbook_markdown,
+)
+from .excel import (
+    parse_excel,
+    parse_excel_text,
 )
 
 __all__ = [
@@ -41,16 +47,19 @@ __all__ = [
     "ParsingSchema",
     "MultiTableParsingSchema",
     "ConversionSchema",
+    "ExcelParsingSchema",
     "Table",
     "Sheet",
     "Workbook",
     "DEFAULT_SCHEMA",
     "DEFAULT_CONVERSION_SCHEMA",
+    "DEFAULT_EXCEL_SCHEMA",
     "TableValidationError",
     "generate_table_markdown",
     "generate_sheet_markdown",
-    "generate_sheet_markdown",
     "generate_workbook_markdown",
+    "parse_excel",
+    "parse_excel_text",
     "converters",
 ]
 
