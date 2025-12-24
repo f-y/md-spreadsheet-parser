@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1] - 2025-12-24
+
+### 🐛 Bug Fixes
+
+### Workbook Metadata Location
+
+- **Fix**: Relaxed the location requirement for Workbook metadata. It can now appear anywhere in the file (e.g., before additional documentation sections), not just at the strictly last non-empty line.
+
 ## [0.7.0] - 2025-12-24
 
 ### 🚀 New Features
