@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0] - 2025-12-30
+
+### ⚠️ Breaking Changes
+
+### Metadata Tag Update (Breaking)
+
+- **BREAKING**: Renamed `<!-- md-spreadsheet-metadata: ... -->` to `<!-- md-spreadsheet-table-metadata: ... -->` for consistency.
+- Backward compatibility for the old tag has been dropped. Existing files with the old tag will still be parsed as tables, but the visual metadata (column widths, validation, etc.) will be ignored until manually updated.
+
+### 📚 Documentation
+
+Added SECURITY.md with reporting instructions.
+
 ## [0.7.2] - 2025-12-27
 
 ### 🚀 New Features
