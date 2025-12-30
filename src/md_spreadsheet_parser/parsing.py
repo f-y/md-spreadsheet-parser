@@ -183,7 +183,9 @@ def parse_table(markdown: str, schema: ParsingSchema = DEFAULT_SCHEMA) -> Table:
             continue
 
         # Check for metadata comment
-        metadata_match = re.match(r"^<!-- md-spreadsheet-metadata: (.*) -->$", line)
+        metadata_match = re.match(
+            r"^<!-- md-spreadsheet-table-metadata: (.*) -->$", line
+        )
         if metadata_match:
             try:
                 json_content = metadata_match.group(1)
@@ -264,7 +266,7 @@ def _extract_tables_simple(
                 block_text = "\n".join(current_block)
                 if (
                     schema.column_separator in block_text
-                    or "<!-- md-spreadsheet-metadata:" in block_text
+                    or "<!-- md-spreadsheet-table-metadata:" in block_text
                 ):
                     table = parse_table(block_text, schema)
                     if table.rows or table.headers:

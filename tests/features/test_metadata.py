@@ -202,7 +202,7 @@ def test_table_metadata_persistence_generation():
     md = table.to_markdown(ParsingSchema())
 
     # Check for metadata comment
-    expected_comment = f"<!-- md-spreadsheet-metadata: {json.dumps(metadata)} -->"
+    expected_comment = f"<!-- md-spreadsheet-table-metadata: {json.dumps(metadata)} -->"
     assert expected_comment in md
 
 
@@ -213,7 +213,7 @@ def test_table_metadata_persistence_parsing():
 |---|
 | 1 |
 
-<!-- md-spreadsheet-metadata: {json.dumps(metadata)} -->"""
+<!-- md-spreadsheet-table-metadata: {json.dumps(metadata)} -->"""
 
     table = parse_table(markdown)
 
@@ -283,7 +283,7 @@ def test_sheet_and_table_metadata_integration():
 |---|
 | 1 |
 
-<!-- md-spreadsheet-metadata: {json.dumps(table_meta)} -->
+<!-- md-spreadsheet-table-metadata: {json.dumps(table_meta)} -->
 
 <!-- md-spreadsheet-sheet-metadata: {json.dumps(sheet_meta)} -->
 """

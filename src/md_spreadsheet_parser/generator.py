@@ -92,7 +92,7 @@ def generate_table_markdown(
     # Append Metadata if present
     if table.metadata and "visual" in table.metadata:
         metadata_json = json.dumps(table.metadata["visual"])
-        comment = f"<!-- md-spreadsheet-metadata: {metadata_json} -->"
+        comment = f"<!-- md-spreadsheet-table-metadata: {metadata_json} -->"
         lines.append("")
         lines.append(comment)
 
