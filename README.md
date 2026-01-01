@@ -808,7 +808,7 @@ The library supports persisting visual state (like column widths and filter sett
 |---|---|
 | 1 | 2 |
 
-<!-- md-spreadsheet-metadata: {"columnWidths": [100, 200]} -->
+<!-- md-spreadsheet-table-metadata: {"columnWidths": [100, 200]} -->
 ```
 
 This ensures that:
