@@ -27,7 +27,7 @@
 > [!IMPORTANT]
 > **🎉 公式GUIエディタが登場: [PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
 >
-> このライブラリのパワーをそのままに、VS Code上でExcelライクな操作感を実現しました。ソート、フィルタ、数式などをGUIで直感的に扱えます。
+> このライブラリのパワーをそのままに、VS Code上でExcelライクな操作感を実現しました。ソート、フィルタ、快適なナビゲーションなどをGUIで直感的に扱えます。
 >
 > [![Get it on VS Code Marketplace](https://img.shields.io/badge/VS%20Code%20Marketplace-%E3%81%A7%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)
 
