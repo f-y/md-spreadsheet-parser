@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0] - 2026-01-03
+
+### 📚 Documentation
+
+---
+type: docs
+---
+
+**Documentation**: Added announcement for the official VS Code Extension **PengSheets** release.
+Remove outdated roadmap and features section from READMEs.
+Complete README.ja.md translation and update metadata tag example in README.md.
+
 ## [0.8.1] - 2026-01-01
 
 ### 🚀 New Features
