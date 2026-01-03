@@ -24,6 +24,12 @@
 
 **md-spreadsheet-parser** は、Markdownのテーブルを単なるテキストからファーストクラスのデータ構造へと昇華させます。スプレッドシートの手軽さとPythonの強力さを兼ね備え、正確かつ依存関係ゼロのエンジンでテーブルの解析、検証、操作を実現します。
 
+> [!TIP]
+> **🎉 リリース: [PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
+>
+> 本ライブラリを搭載した公式 VS Code 拡張機能をリリースしました！ VS Code 上で Markdown の表を Excel ライクに編集できます。
+>👉 **[Marketplace で入手](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
+
 🚀 **すぐに使いたいですか？** [Cookbook](https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.ja.md) には、コピー＆ペーストで使えるレシピ（Excel変換、Pandas連携、Markdownテーブル操作など）が満載です。
 
 ## 目次
@@ -852,14 +858,11 @@ cat input.md | md-spreadsheet-parser
 | `table_header_level` | `3` | (MultiTable) テーブルのヘッダーレベル。 |
 | `capture_description` | `True` | (MultiTable) ヘッダーとテーブルの間のテキストをキャプチャします。 |
 
-## 今後のロードマップ (Future Roadmap)
-
+## エコシステム (Ecosystem)
+ 
 このパーサーは、新しいエコシステムである **テキストベースの表計算管理** の中核となる基盤です。
 
-Markdownファイルの完全なGUIスプレッドシートエディタとして機能する **リッチなVS Code拡張機能** のリリースを準備しています。
-
-> [!NOTE]
-> **近日公開**: VS Code拡張機能の公式リリースは、このライブラリの **v1.0.0** とともにここで発表されます。お楽しみに！
+Markdownファイルの完全なGUIスプレッドシートエディタとして機能する **[PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)** を提供しています。
 
 **ビジョン: "ExcelのようなUX、Gitネイティブなデータ"**
 高パフォーマンスなエディタとこの堅牢なパーサーを組み合わせることで、ソフトウェアプロジェクトにおけるバイナリスプレッドシートファイルの管理という長年の問題を解決することを目指しています。

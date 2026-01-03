@@ -24,7 +24,13 @@
 
 **md-spreadsheet-parser** elevates Markdown tables from simple text to first-class data structures. It offers a precise, zero-dependency engine to parse, validate, and manipulate tables with the ease of a spreadsheet and the power of Python.
 
-🚀 **Need a quick solution?** Check out the [Cookbook](https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.md) for copy-pasteable recipes (Excel conversion, Pandas integration, Markdown table manipulation, and more).
+> [!TIP]
+> **🎉 Now Available: [PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
+>
+> We have released the official VS Code Extension powered by this library! Experience Excel-like editing for your Markdown tables directly in VS Code.
+>� **[Get it on Marketplace](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
+
+�🚀 **Need a quick solution?** Check out the [Cookbook](https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.md) for copy-pasteable recipes (Excel conversion, Pandas integration, Markdown table manipulation, and more).
 
 Read in Japanese: 日本語版はこちら(
 <a href="https://github.com/f-y/md-spreadsheet-parser/blob/main/README.ja.md">README</a>, <a href="https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.ja.md">Cookbook</a>
@@ -856,14 +862,11 @@ Customize parsing behavior using `ParsingSchema` and `MultiTableParsingSchema`.
 | `table_header_level` | `3` | (MultiTable) Header level for tables. |
 | `capture_description` | `True` | (MultiTable) Capture text between header and table. |
 
-## Future Roadmap
-
+## Ecosystem
+ 
 This parser is the core foundation of a new ecosystem: **Text-Based Spreadsheet Management**.
 
-We are preparing to release a **Rich VS Code Extension** that acts as a full GUI Spreadsheet Editor for Markdown files.
-
-> [!NOTE]
-> **Coming Soon**: The official release of the VS Code Extension will be announced here alongside **v1.0.0** of this library. Stay tuned!
+It powers **[PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**, a rich VS Code extension that provides a full GUI Spreadsheet Editor for Markdown files.
 
 **The Vision: "Excel-like UX, Git-native Data"**
 By combining a high-performance editor with this robust parser, we aim to solve the long-standing problem of managing binary spreadsheet files in software projects.
