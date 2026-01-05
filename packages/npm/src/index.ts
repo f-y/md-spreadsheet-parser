@@ -105,9 +105,14 @@ export class Table {
         }
     }
 
-    toModels(schemaCls: any, conversionSchema?: any): any {
+    toDTO(): any {
         const dto = { ...this } as any;
         if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        return dto;
+    }
+
+    toModels(schemaCls: any, conversionSchema?: any): any {
+        const dto = this.toDTO();
         const clientRes = clientSideToModels(this.headers, this.rows || [], schemaCls);
         if (clientRes) {
             return clientRes;
@@ -117,55 +122,48 @@ export class Table {
     }
 
     toMarkdown(schema?: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableToMarkdown(dto, schema);
         return res;
     }
 
     updateCell(rowIdx: any, colIdx: any, value: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableUpdateCell(dto, rowIdx, colIdx, value);
         Object.assign(this, res);
         return this;
     }
 
     deleteRow(rowIdx: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableDeleteRow(dto, rowIdx);
         Object.assign(this, res);
         return this;
     }
 
     deleteColumn(colIdx: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableDeleteColumn(dto, colIdx);
         Object.assign(this, res);
         return this;
     }
 
     clearColumnData(colIdx: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableClearColumnData(dto, colIdx);
         Object.assign(this, res);
         return this;
     }
 
     insertRow(rowIdx: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableInsertRow(dto, rowIdx);
         Object.assign(this, res);
         return this;
     }
 
     insertColumn(colIdx: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _tableInsertColumn(dto, colIdx);
         Object.assign(this, res);
         return this;
@@ -185,16 +183,21 @@ export class Sheet {
         }
     }
 
-    getTable(name: any): any {
+    toDTO(): any {
         const dto = { ...this } as any;
+        if (dto.tables) dto.tables = dto.tables.map((x: any) => x.toDTO ? x.toDTO() : x);
         if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        return dto;
+    }
+
+    getTable(name: any): any {
+        const dto = this.toDTO();
         const res = _sheetGetTable(dto, name);
-        return res;
+        return res ? new Table(res) : undefined;
     }
 
     toMarkdown(schema?: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _sheetToMarkdown(dto, schema);
         return res;
     }
@@ -211,31 +214,34 @@ export class Workbook {
         }
     }
 
-    getSheet(name: any): any {
+    toDTO(): any {
         const dto = { ...this } as any;
+        if (dto.sheets) dto.sheets = dto.sheets.map((x: any) => x.toDTO ? x.toDTO() : x);
         if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        return dto;
+    }
+
+    getSheet(name: any): any {
+        const dto = this.toDTO();
         const res = _workbookGetSheet(dto, name);
-        return res;
+        return res ? new Sheet(res) : undefined;
     }
 
     toMarkdown(schema: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _workbookToMarkdown(dto, schema);
         return res;
     }
 
     addSheet(name: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _workbookAddSheet(dto, name);
         Object.assign(this, res);
         return this;
     }
 
     deleteSheet(index: any): any {
-        const dto = { ...this } as any;
-        if (dto.metadata) dto.metadata = JSON.stringify(dto.metadata);
+        const dto = this.toDTO();
         const res = _workbookDeleteSheet(dto, index);
         Object.assign(this, res);
         return this;
@@ -257,6 +263,11 @@ export class ParsingSchema {
             this.stripWhitespace = data.stripWhitespace;
             this.convertBrToNewline = data.convertBrToNewline;
         }
+    }
+
+    toDTO(): any {
+        const dto = { ...this } as any;
+        return dto;
     }
 }
 
@@ -284,6 +295,11 @@ export class MultiTableParsingSchema {
             this.captureDescription = data.captureDescription;
         }
     }
+
+    toDTO(): any {
+        const dto = { ...this } as any;
+        return dto;
+    }
 }
 
 export class ConversionSchema {
@@ -297,6 +313,13 @@ export class ConversionSchema {
             this.customConverters = (typeof data.customConverters === 'string') ? JSON.parse(data.customConverters) : data.customConverters;
             this.fieldConverters = (typeof data.fieldConverters === 'string') ? JSON.parse(data.fieldConverters) : data.fieldConverters;
         }
+    }
+
+    toDTO(): any {
+        const dto = { ...this } as any;
+        if (dto.customConverters) dto.customConverters = JSON.stringify(dto.customConverters);
+        if (dto.fieldConverters) dto.fieldConverters = JSON.stringify(dto.fieldConverters);
+        return dto;
     }
 }
 
@@ -313,5 +336,10 @@ export class ExcelParsingSchema {
             this.delimiter = data.delimiter;
             this.headerSeparator = data.headerSeparator;
         }
+    }
+
+    toDTO(): any {
+        const dto = { ...this } as any;
+        return dto;
     }
 }

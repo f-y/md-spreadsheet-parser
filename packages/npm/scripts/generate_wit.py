@@ -327,6 +327,7 @@ class WitGenerator:
                 ),  # camelCase for TS
                 "wit_type": self.map_type(str(member.annotation))[0],
                 "is_json": self.is_json_type(str(member.annotation)),
+                "py_type": str(member.annotation),
             }
             for name, member in valid_members.items()
         ]
@@ -731,6 +732,26 @@ class WitGenerator:
             content += "        }\n"
             content += "    }\n"
 
+            # toDTO Method
+            content += "\n    toDTO(): any {\n"
+            content += "        const dto = { ...this } as any;\n"
+            for f in info["fields"]:
+                fname = f["js_name"]
+                if f.get("is_json"):
+                    content += f"        if (dto.{fname}) dto.{fname} = JSON.stringify(dto.{fname});\n"
+                
+                # Check for list[Model] recursion
+                py_type = f.get("py_type", "")
+                if py_type.startswith("list["):
+                    match = re.search(r"list\[(.*)\]", py_type)
+                    if match:
+                        inner = match.group(1).strip("'").strip('"')
+                        if inner in self.discovered_models:
+                            content += f"        if (dto.{fname}) dto.{fname} = dto.{fname}.map((x: any) => x.toDTO ? x.toDTO() : x);\n"
+
+            content += "        return dto;\n"
+            content += "    }\n"
+
             # Methods
             for m in info["methods"]:
                 mname = re.sub(r"_([a-z])", lambda g: g.group(1).upper(), m["name"])
@@ -766,15 +787,9 @@ class WitGenerator:
                 call_args[0] = "(this as any)"
 
                 # Create flattened DTO for calling WASM if we are passing 'this' (param named self_obj)
-                # We need to stringify JSON fields
-                has_json_fields = any(f.get("is_json") for f in info["fields"])
-                if has_json_fields:
-                    content += "        const dto = { ...this } as any;\n"
-                    for f in info["fields"]:
-                        if f.get("is_json"):
-                            fname = f["js_name"]
-                            content += f"        if (dto.{fname}) dto.{fname} = JSON.stringify(dto.{fname});\n"
-                    call_args[0] = "dto"
+                # Use toDTO to handle deep conversion
+                content += "        const dto = this.toDTO();\n"
+                call_args[0] = "dto"
 
                 if class_name == "Table" and mname == "toModels":
                     content += "        const clientRes = clientSideToModels(this.headers, this.rows || [], schemaCls);\n"
@@ -800,13 +815,21 @@ class WitGenerator:
                     content += "        Object.assign(this, res);\n"
                     content += "        return this;\n"
                 else:
-                    # If ret_py in known_models, wrap it
-                    # Just string matching for now
-                    clean_ret = (
-                        ret_py.replace(" | None", "").replace("Optional[", "")[:-1]
-                        if "Optional[" in ret_py
-                        else ret_py
-                    )
+                    # More robust cleaning
+                    clean_ret = ret_py
+                    
+                    # Handle Optional[T] wrapper
+                    if clean_ret.startswith("Optional[") and clean_ret.endswith("]"):
+                        clean_ret = clean_ret[9:-1]
+
+                    # Handle Union (A | B) logic - usually it's T | None
+                    if "|" in clean_ret:
+                        parts = [p.strip() for p in clean_ret.split("|")]
+                        # specific filter for None
+                        real_types = [p for p in parts if p != "None"]
+                        if len(real_types) == 1:
+                            clean_ret = real_types[0]
+                    
                     clean_ret = clean_ret.strip("'").strip('"')  # 'Table' -> Table
 
                     if clean_ret in self.discovered_models:
@@ -814,7 +837,11 @@ class WitGenerator:
                             content += "        Object.assign(this, res);\n"
                             content += "        return this;\n"
                         else:
-                            content += f"        return new {clean_ret}(res);\n"
+                            is_optional = "None" in ret_py or "Optional" in ret_py
+                            if is_optional:
+                                content += f"        return res ? new {clean_ret}(res) : undefined;\n"
+                            else:
+                                content += f"        return new {clean_ret}(res);\n"
                     else:
                         content += "        return res;\n"
 
