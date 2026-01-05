@@ -29,11 +29,11 @@
     "license": "MIT",
     "devDependencies": {
         "@bytecodealliance/jco": "^1.0.0",
-        "@bytecodealliance/preview2-shim": "^0.17.0",
         "typescript": "^5.9.3",
         "zod": "^4.3.4"
     },
     "dependencies": {
+        "@bytecodealliance/preview2-shim": "^0.17.0",
         "execa": "^9.6.1",
         "shelljs": "^0.10.0"
     }
