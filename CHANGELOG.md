@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1] - 2026-01-05
+
+### 🔧 Maintenance
+
+Update NPM publishing workflow to use Trusted Publishing (OIDC) instead of secret tokens.
+
 ## [1.1.0] - 2026-01-05
 
 ### 🚀 New Features
