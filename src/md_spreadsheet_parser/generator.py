@@ -34,7 +34,7 @@ def generate_table_markdown(
             lines.append("")  # Empty line after description
 
     # Build table
-    column_separator = list(schema.column_separator or "|")
+
     sep = f" {schema.column_separator or '|'} "
 
     def _prepare_cell(cell: str) -> str:
