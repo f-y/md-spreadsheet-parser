@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2] - 2026-01-05
+
+### 🐛 Bug Fixes
+
+Move `@bytecodealliance/preview2-shim` to `dependencies` to ensure it is available at runtime. This fixes `ERR_MODULE_NOT_FOUND` when using the package in a fresh environment.
+
 ## [1.1.1] - 2026-01-05
 
 ### 🔧 Maintenance
