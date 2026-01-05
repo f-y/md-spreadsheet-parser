@@ -22,6 +22,10 @@
         "python"
     ],
     "author": "f-y",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/f-y/md-spreadsheet-parser.git"
+    },
     "license": "MIT",
     "devDependencies": {
         "@bytecodealliance/jco": "^1.0.0",
