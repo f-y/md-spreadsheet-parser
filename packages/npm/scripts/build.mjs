@@ -88,6 +88,10 @@ async function main() {
     console.log('--- Transpiling to JS ---');
     await run('npx', ['jco', 'transpile', 'dist/parser.wasm', '-o', 'dist']);
 
+    // 5.5 Cleanup intermediate WASM
+    console.log('--- Removing intermediate WASM ---');
+    await rm(join(pkgDir, 'dist', 'parser.wasm'));
+
     // 6. Compile TypeScript
     console.log('--- Compiling TypeScript ---');
     await run('npx', ['tsc']);
