@@ -1,5 +1,18 @@
 import { cleanCell as _cleanCell, splitRowGfm as _splitRowGfm, parseRow as _parseRow, parseSeparatorRow as _parseSeparatorRow, isSeparatorRow as _isSeparatorRow, parseTable as _parseTable, parseSheet as _parseSheet, parseWorkbook as _parseWorkbook, scanTables as _scanTables, generateTableMarkdown as _generateTableMarkdown, generateSheetMarkdown as _generateSheetMarkdown, generateWorkbookMarkdown as _generateWorkbookMarkdown, parseTableFromFile as _parseTableFromFile, parseWorkbookFromFile as _parseWorkbookFromFile, scanTablesFromFile as _scanTablesFromFile, scanTablesIter as _scanTablesIter, tableToModels as _tableToModels, tableToMarkdown as _tableToMarkdown, tableUpdateCell as _tableUpdateCell, tableDeleteRow as _tableDeleteRow, tableDeleteColumn as _tableDeleteColumn, tableClearColumnData as _tableClearColumnData, tableInsertRow as _tableInsertRow, tableInsertColumn as _tableInsertColumn, sheetGetTable as _sheetGetTable, sheetToMarkdown as _sheetToMarkdown, workbookGetSheet as _workbookGetSheet, workbookToMarkdown as _workbookToMarkdown, workbookAddSheet as _workbookAddSheet, workbookDeleteSheet as _workbookDeleteSheet } from '../dist/parser.js';
+// @ts-ignore
+import path from 'node:path';
+// @ts-ignore
+import process from 'node:process';
+// @ts-ignore
+import { _addPreopen } from '@bytecodealliance/preview2-shim/filesystem';
 import { clientSideToModels } from './client-adapters.js';
+
+// @ts-ignore
+_addPreopen('/', path.parse(process.cwd()).root);
+
+function resolveToVirtualPath(p: string) {
+    return path.resolve(p);
+}
 
 export function cleanCell(cell: any, schema: any): any {
     const res = _cleanCell(cell, schema);
@@ -62,17 +75,20 @@ export function generateWorkbookMarkdown(workbook: any, schema: any): any {
 }
 
 export function parseTableFromFile(source: any, schema?: any): any {
-    const res = _parseTableFromFile(source, schema);
+    const source_resolved = resolveToVirtualPath(source);
+    const res = _parseTableFromFile(source_resolved, schema);
     return new Table(res);
 }
 
 export function parseWorkbookFromFile(source: any, schema?: any): any {
-    const res = _parseWorkbookFromFile(source, schema);
+    const source_resolved = resolveToVirtualPath(source);
+    const res = _parseWorkbookFromFile(source_resolved, schema);
     return new Workbook(res);
 }
 
 export function scanTablesFromFile(source: any, schema?: any): any {
-    const res = _scanTablesFromFile(source, schema);
+    const source_resolved = resolveToVirtualPath(source);
+    const res = _scanTablesFromFile(source_resolved, schema);
     return res.map((x: any) => new Table(x));
 }
 

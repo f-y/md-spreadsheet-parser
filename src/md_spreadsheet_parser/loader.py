@@ -1,10 +1,10 @@
-from typing import Union, TextIO, Iterator, Iterable
-from pathlib import Path
 from dataclasses import replace
+from pathlib import Path
+from typing import Iterable, Iterator, TextIO, Union
 
 from .models import Table, Workbook
-from .schemas import ParsingSchema, MultiTableParsingSchema, DEFAULT_SCHEMA
 from .parsing import parse_table, parse_workbook, scan_tables
+from .schemas import DEFAULT_SCHEMA, MultiTableParsingSchema, ParsingSchema
 
 
 def _read_content(source: Union[str, Path, TextIO]) -> str:

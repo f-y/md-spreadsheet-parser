@@ -641,7 +641,18 @@ class WitGenerator:
                 wasm_imports.append(f"{camel} as _{camel}")
 
         content = f"import {{ {', '.join(wasm_imports)} }} from '../dist/parser.js';\n"
+        content += "// @ts-ignore\n"
+        content += "import path from 'node:path';\n"
+        content += "// @ts-ignore\n"
+        content += "import process from 'node:process';\n"
+        content += "// @ts-ignore\n"
+        content += "import { _addPreopen } from '@bytecodealliance/preview2-shim/filesystem';\n"
         content += "import { clientSideToModels } from './client-adapters.js';\n\n"
+        content += "// @ts-ignore\n"
+        content += "_addPreopen('/', path.parse(process.cwd()).root);\n\n"
+        content += "function resolveToVirtualPath(p: string) {\n"
+        content += "    return path.resolve(p);\n"
+        content += "}\n\n"
 
         # Generate Wrapper Functions
         for func in self.global_functions:
@@ -667,6 +678,14 @@ class WitGenerator:
                 call_args.append(ts_param)
 
             content += f"export function {js_name}({', '.join(args)}): any {{\n"
+            
+            # Auto-wrap file path arguments for WASI
+            if "FromFile" in js_name:
+                for idx, arg_name in enumerate(call_args):
+                    if arg_name == "source":
+                         content += f"    const {arg_name}_resolved = resolveToVirtualPath({arg_name});\n"
+                         call_args[idx] = f"{arg_name}_resolved"
+
             content += f"    const res = _{wasm_func_name}({', '.join(call_args)});\n"
 
             # Return wrapping
