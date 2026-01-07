@@ -641,17 +641,51 @@ class WitGenerator:
                 wasm_imports.append(f"{camel} as _{camel}")
 
         content = f"import {{ {', '.join(wasm_imports)} }} from '../dist/parser.js';\n"
-        content += "// @ts-ignore\n"
-        content += "import path from 'node:path';\n"
-        content += "// @ts-ignore\n"
-        content += "import process from 'node:process';\n"
-        content += "// @ts-ignore\n"
-        content += "import { _addPreopen } from '@bytecodealliance/preview2-shim/filesystem';\n"
         content += "import { clientSideToModels } from './client-adapters.js';\n\n"
-        content += "// @ts-ignore\n"
-        content += "_addPreopen('/', path.parse(process.cwd()).root);\n\n"
-        content += "function resolveToVirtualPath(p: string) {\n"
-        content += "    return path.resolve(p);\n"
+        
+        # Browser-compatible environment detection and lazy initialization
+        content += "// Environment detection\n"
+        content += "// @ts-ignore - process may not be defined in browser\n"
+        content += "const isNode = typeof process !== 'undefined'\n"
+        content += "    && typeof process.versions !== 'undefined'\n"
+        content += "    && typeof process.versions.node !== 'undefined';\n\n"
+        
+        content += "// Lazily loaded Node.js modules (only in Node.js environment)\n"
+        content += "let _pathModule: any = null;\n"
+        content += "let _nodeInitialized = false;\n\n"
+        
+        content += "/**\n"
+        content += " * Ensures Node.js environment is initialized for file system operations.\n"
+        content += " * Throws an error in browser environments.\n"
+        content += " */\n"
+        content += "async function ensureNodeEnvironment(): Promise<void> {\n"
+        content += "    if (!isNode) {\n"
+        content += "        throw new Error(\n"
+        content += "            'File system operations (parseTableFromFile, parseWorkbookFromFile, scanTablesFromFile) ' +\n"
+        content += "            'are not supported in browser environments. ' +\n"
+        content += "            'Use parseTable(), parseWorkbook(), or scanTables() with string content instead.'\n"
+        content += "        );\n"
+        content += "    }\n"
+        content += "    if (_nodeInitialized) return;\n\n"
+        content += "    // Dynamic imports for Node.js only\n"
+        content += "    const [pathModule, processModule, fsShim] = await Promise.all([\n"
+        content += "        import('node:path'),\n"
+        content += "        import('node:process'),\n"
+        content += "        import('@bytecodealliance/preview2-shim/filesystem')\n"
+        content += "    ]);\n\n"
+        content += "    _pathModule = pathModule.default || pathModule;\n"
+        content += "    const proc = processModule.default || processModule;\n"
+        content += "    const root = _pathModule.parse(proc.cwd()).root;\n"
+        content += "    // @ts-ignore - _addPreopen is an internal function\n"
+        content += "    (fsShim as any)._addPreopen('/', root);\n"
+        content += "    _nodeInitialized = true;\n"
+        content += "}\n\n"
+        
+        content += "function resolveToVirtualPath(p: string): string {\n"
+        content += "    if (!_pathModule) {\n"
+        content += "        throw new Error('Node.js modules not initialized. Call ensureNodeEnvironment() first.');\n"
+        content += "    }\n"
+        content += "    return _pathModule.resolve(p);\n"
         content += "}\n\n"
 
         # Generate Wrapper Functions
@@ -677,14 +711,20 @@ class WitGenerator:
                 args.append(f"{sig_param}: any")  # TODO types
                 call_args.append(ts_param)
 
-            content += f"export function {js_name}({', '.join(args)}): any {{\n"
+            # Check if this is a file-based function (requires async for browser compatibility)
+            is_file_func = "FromFile" in js_name
             
-            # Auto-wrap file path arguments for WASI
-            if "FromFile" in js_name:
+            if is_file_func:
+                # Async function signature for file operations
+                content += f"export async function {js_name}({', '.join(args)}): Promise<any> {{\n"
+                content += "    await ensureNodeEnvironment();\n"
                 for idx, arg_name in enumerate(call_args):
                     if arg_name == "source":
-                         content += f"    const {arg_name}_resolved = resolveToVirtualPath({arg_name});\n"
-                         call_args[idx] = f"{arg_name}_resolved"
+                        content += f"    const {arg_name}_resolved = resolveToVirtualPath({arg_name});\n"
+                        call_args[idx] = f"{arg_name}_resolved"
+            else:
+                # Regular sync function
+                content += f"export function {js_name}({', '.join(args)}): any {{\n"
 
             content += f"    const res = _{wasm_func_name}({', '.join(call_args)});\n"
 

@@ -163,8 +163,10 @@ This ensures that no method is accidentally left behind or renamed during the ge
 While we guarantee structural parity, some Python features have runtime constraints in the WASM environment:
 
 1.  **File System Access (`*FromFile` functions)**:
-    - Functions like `parseTableFromFile` are exposed and structurally valid.
-    - However, they rely on the WASM runtime having access to the file system. In a standard browser environment without a virtual file system (VFS), these may fail with I/O errors. They are fully functional in Node.js or WASI environments where local file access is configured.
+    - Functions like `parseTableFromFile`, `parseWorkbookFromFile`, and `scanTablesFromFile` are exposed as **async functions** that require a Node.js environment.
+    - **In Node.js**: These functions work correctly. On first call, they lazily initialize the WASI filesystem shim.
+    - **In Browser**: These functions throw a clear error message: `"File system operations are not supported in browser environments. Use parseTable(), parseWorkbook(), or scanTables() with string content instead."`
+    - **Browser Compatibility**: All other core APIs (`parseTable`, `parseWorkbook`, `scanTables`, etc.) work seamlessly in both Node.js and browser environments, including bundlers like Vite and Webpack.
 
 2.  **`Table.toModels(schema_cls)` Usage**:
     - Because JavaScript cannot pass Python class objects directly, the adapter allows passing the **class name as a string**.
