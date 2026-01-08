@@ -247,7 +247,7 @@ export class Sheet {
     constructor(data?: Partial<Sheet>) {
         if (data) {
             this.name = data.name;
-            this.tables = data.tables;
+            this.tables = (data.tables || []).map((x: any) => x instanceof Table ? x : new Table(x));
             this.metadata = (typeof data.metadata === 'string') ? JSON.parse(data.metadata) : data.metadata;
         }
     }
@@ -290,7 +290,7 @@ export class Workbook {
 
     constructor(data?: Partial<Workbook>) {
         if (data) {
-            this.sheets = data.sheets;
+            this.sheets = (data.sheets || []).map((x: any) => x instanceof Sheet ? x : new Sheet(x));
             this.metadata = (typeof data.metadata === 'string') ? JSON.parse(data.metadata) : data.metadata;
         }
     }

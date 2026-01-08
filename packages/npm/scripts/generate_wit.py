@@ -783,9 +783,23 @@ class WitGenerator:
             content += "        if (data) {\n"
             for f in info["fields"]:
                 fname = f["js_name"]
+                py_type = f.get("py_type", "")
+                
                 if f.get("is_json"):
                     # Robust handling: parse string if string, else use as is
                     content += f"            this.{fname} = (typeof data.{fname} === 'string') ? JSON.parse(data.{fname}) : data.{fname};\n"
+                elif py_type.startswith("list["):
+                    # Check if it's a list of models that need wrapping
+                    match = re.search(r"list\[(.*)\]", py_type)
+                    if match:
+                        inner = match.group(1).strip("'").strip('"')
+                        if inner in self.discovered_models:
+                            # Wrap each item in the appropriate class
+                            content += f"            this.{fname} = (data.{fname} || []).map((x: any) => x instanceof {inner} ? x : new {inner}(x));\n"
+                        else:
+                            content += f"            this.{fname} = data.{fname};\n"
+                    else:
+                        content += f"            this.{fname} = data.{fname};\n"
                 else:
                     content += f"            this.{fname} = data.{fname};\n"
             content += "        }\n"
