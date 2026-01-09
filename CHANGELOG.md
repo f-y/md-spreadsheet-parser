@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.2.0] - 2026-01-10
+
+### 🚀 New Features
+
+Added consistent CRUD operation methods to Workbook, Sheet, and Table models:
+
+**Workbook**:
+- `move_sheet(from_index, to_index)` - reorder sheets
+- `replace_sheet(index, sheet)` - replace sheet at index
+- `rename_sheet(index, new_name)` - rename sheet at index
+
+**Sheet**:
+- `rename(new_name)` - rename the sheet
+- `add_table(name?)` - append a new empty table
+- `delete_table(index)` - remove table at index
+- `replace_table(index, table)` - replace table at index
+- `move_table(from_index, to_index)` - reorder tables
+
+**Table**:
+- `rename(new_name)` - rename the table
+- `move_row(from_index, to_index)` - reorder rows
+- `move_column(from_index, to_index)` - reorder columns
+## NPM Package E2E Test Restructuring and Coverage Expansion
+
+Comprehensive improvements to the NPM package testing infrastructure:
+
+### Test Restructuring
+- Migrated from monolithic `scripts/test.mjs` to modular `tests/` directory
+- Split tests into dedicated files: `parsing.test.mjs`, `table.test.mjs`, `sheet.test.mjs`, `workbook.test.mjs`, `tomodels.test.mjs`
+- Added shared `helpers.mjs` with assertion utilities and `runner.mjs` test orchestrator
+
+### API Improvements
+- `replaceTable` and `replaceSheet` now auto-convert model instances to DTO (no explicit `.toDTO()` required)
+- Full API parity with Python: users can pass `Table`/`Sheet` instances directly
+
+### Test Coverage Expansion (204 → 235 assertions)
+- Added tests for: `deleteRow`, `deleteColumn`, `insertRow`, `insertColumn`, `clearColumnData`
+- Added `Sheet.getTable` tests
+- Added `parseTableFromFile`, `parseWorkbookFromFile`, `scanTablesFromFile` function verification
+
+### Documentation
+- Created `DEVELOPMENT.md` documenting the Python-to-NPM workflow
+Added comprehensive E2E tests for NPM package (118 test cases) covering parseTable, parseWorkbook, scanTables, Table/Sheet/Workbook methods, deep metadata type verification, toModels with Plain Object and Zod schemas, and mutation API return values. Also improved .gitignore documentation, fixed verify_api_coverage.py, and added Limitations section to README documenting parseExcel unavailability.
+
 ## [1.1.11] - 2026-01-09
 
 ### 🐛 Bug Fixes
