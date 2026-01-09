@@ -345,6 +345,69 @@ class Table:
             self, headers=new_headers, rows=new_rows, alignments=new_alignments
         )
 
+    def rename(self, new_name: str) -> "Table":
+        """
+        Return a new Table with the name changed.
+        """
+        return replace(self, name=new_name)
+
+    def move_row(self, from_index: int, to_index: int) -> "Table":
+        """
+        Return a new Table with the row moved from from_index to to_index.
+        """
+        if from_index < 0 or from_index >= len(self.rows):
+            raise IndexError("from_index out of range")
+        if to_index < 0 or to_index >= len(self.rows):
+            raise IndexError("to_index out of range")
+
+        new_rows = [list(r) for r in self.rows]
+        row = new_rows.pop(from_index)
+        new_rows.insert(to_index, row)
+        return replace(self, rows=new_rows)
+
+    def move_column(self, from_index: int, to_index: int) -> "Table":
+        """
+        Return a new Table with the column moved from from_index to to_index.
+        """
+        # Determine width from headers or first row
+        width = (
+            len(self.headers)
+            if self.headers
+            else (len(self.rows[0]) if self.rows else 0)
+        )
+        if from_index < 0 or from_index >= width:
+            raise IndexError("from_index out of range")
+        if to_index < 0 or to_index >= width:
+            raise IndexError("to_index out of range")
+
+        # Move header
+        new_headers = None
+        if self.headers:
+            new_headers = list(self.headers)
+            header = new_headers.pop(from_index)
+            new_headers.insert(to_index, header)
+
+        # Move alignments
+        new_alignments = None
+        if self.alignments:
+            new_alignments = list(self.alignments)
+            if from_index < len(new_alignments):
+                alignment = new_alignments.pop(from_index)
+                new_alignments.insert(to_index, alignment)
+
+        # Move data in each row
+        new_rows = []
+        for row in self.rows:
+            new_row = list(row)
+            if from_index < len(new_row):
+                cell = new_row.pop(from_index)
+                new_row.insert(to_index, cell)
+            new_rows.append(new_row)
+
+        return replace(
+            self, headers=new_headers, rows=new_rows, alignments=new_alignments
+        )
+
 
 @dataclass(frozen=True)
 class Sheet:
@@ -406,6 +469,57 @@ class Sheet:
             str: The Markdown string.
         """
         return generate_sheet_markdown(self, schema)
+
+    def rename(self, new_name: str) -> "Sheet":
+        """
+        Return a new Sheet with the name changed.
+        """
+        return replace(self, name=new_name)
+
+    def add_table(self, name: str | None = None) -> "Sheet":
+        """
+        Return a new Sheet with a new empty table appended.
+        """
+        new_table = Table(headers=["A", "B", "C"], rows=[["", "", ""]], name=name)
+        new_tables = list(self.tables)
+        new_tables.append(new_table)
+        return replace(self, tables=new_tables)
+
+    def delete_table(self, index: int) -> "Sheet":
+        """
+        Return a new Sheet with the table at index removed.
+        """
+        if index < 0 or index >= len(self.tables):
+            raise IndexError("Table index out of range")
+
+        new_tables = list(self.tables)
+        new_tables.pop(index)
+        return replace(self, tables=new_tables)
+
+    def replace_table(self, index: int, table: "Table") -> "Sheet":
+        """
+        Return a new Sheet with the table at index replaced.
+        """
+        if index < 0 or index >= len(self.tables):
+            raise IndexError("Table index out of range")
+
+        new_tables = list(self.tables)
+        new_tables[index] = table
+        return replace(self, tables=new_tables)
+
+    def move_table(self, from_index: int, to_index: int) -> "Sheet":
+        """
+        Return a new Sheet with the table moved from from_index to to_index.
+        """
+        if from_index < 0 or from_index >= len(self.tables):
+            raise IndexError("from_index out of range")
+        if to_index < 0 or to_index >= len(self.tables):
+            raise IndexError("to_index out of range")
+
+        new_tables = list(self.tables)
+        table = new_tables.pop(from_index)
+        new_tables.insert(to_index, table)
+        return replace(self, tables=new_tables)
 
 
 @dataclass(frozen=True)
@@ -490,5 +604,47 @@ class Workbook:
 
         new_sheets = list(self.sheets)
         new_sheets.pop(index)
+
+        return replace(self, sheets=new_sheets)
+
+    def move_sheet(self, from_index: int, to_index: int) -> "Workbook":
+        """
+        Return a new Workbook with the sheet moved from from_index to to_index.
+        """
+        if from_index < 0 or from_index >= len(self.sheets):
+            raise IndexError("from_index out of range")
+        if to_index < 0 or to_index >= len(self.sheets):
+            raise IndexError("to_index out of range")
+
+        new_sheets = list(self.sheets)
+        sheet = new_sheets.pop(from_index)
+        new_sheets.insert(to_index, sheet)
+
+        return replace(self, sheets=new_sheets)
+
+    def replace_sheet(self, index: int, sheet: "Sheet") -> "Workbook":
+        """
+        Return a new Workbook with the sheet at index replaced.
+        """
+        if index < 0 or index >= len(self.sheets):
+            raise IndexError("Sheet index out of range")
+
+        new_sheets = list(self.sheets)
+        new_sheets[index] = sheet
+
+        return replace(self, sheets=new_sheets)
+
+    def rename_sheet(self, index: int, new_name: str) -> "Workbook":
+        """
+        Return a new Workbook with the sheet at index renamed.
+        """
+        if index < 0 or index >= len(self.sheets):
+            raise IndexError("Sheet index out of range")
+
+        old_sheet = self.sheets[index]
+        new_sheet = replace(old_sheet, name=new_name)
+
+        new_sheets = list(self.sheets)
+        new_sheets[index] = new_sheet
 
         return replace(self, sheets=new_sheets)
