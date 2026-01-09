@@ -86,10 +86,21 @@ world spreadsheet-parser {
     export table-clear-column-data: func(self-obj: table, col-idx: s32) -> table;
     export table-insert-row: func(self-obj: table, row-idx: s32) -> table;
     export table-insert-column: func(self-obj: table, col-idx: s32) -> table;
+    export table-rename: func(self-obj: table, new-name: string) -> table;
+    export table-move-row: func(self-obj: table, from-index: s32, to-index: s32) -> table;
+    export table-move-column: func(self-obj: table, from-index: s32, to-index: s32) -> table;
     export sheet-get-table: func(self-obj: sheet, name: string) -> option<table>;
     export sheet-to-markdown: func(self-obj: sheet, schema: option<parsing-schema>) -> string;
+    export sheet-rename: func(self-obj: sheet, new-name: string) -> sheet;
+    export sheet-add-table: func(self-obj: sheet, name: option<string>) -> sheet;
+    export sheet-delete-table: func(self-obj: sheet, index: s32) -> sheet;
+    export sheet-replace-table: func(self-obj: sheet, index: s32, table: table) -> sheet;
+    export sheet-move-table: func(self-obj: sheet, from-index: s32, to-index: s32) -> sheet;
     export workbook-get-sheet: func(self-obj: workbook, name: string) -> option<sheet>;
     export workbook-to-markdown: func(self-obj: workbook, schema: option<multi-table-parsing-schema>) -> string;
     export workbook-add-sheet: func(self-obj: workbook, name: string) -> workbook;
     export workbook-delete-sheet: func(self-obj: workbook, index: s32) -> workbook;
+    export workbook-move-sheet: func(self-obj: workbook, from-index: s32, to-index: s32) -> workbook;
+    export workbook-replace-sheet: func(self-obj: workbook, index: s32, sheet: sheet) -> workbook;
+    export workbook-rename-sheet: func(self-obj: workbook, index: s32, new-name: string) -> workbook;
 }

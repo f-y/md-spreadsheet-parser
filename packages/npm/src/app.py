@@ -132,6 +132,23 @@ class WitWorld:
         kwargs = {}
         if col_idx is not None: kwargs['col_idx'] = col_idx
         return convert_table(real_self.insert_column(**kwargs))
+    def table_rename(self, self_obj: Any, new_name: Any = None):
+        real_self = unwrap_table(self_obj)
+        kwargs = {}
+        if new_name is not None: kwargs['new_name'] = new_name
+        return convert_table(real_self.rename(**kwargs))
+    def table_move_row(self, self_obj: Any, from_index: Any = None, to_index: Any = None):
+        real_self = unwrap_table(self_obj)
+        kwargs = {}
+        if from_index is not None: kwargs['from_index'] = from_index
+        if to_index is not None: kwargs['to_index'] = to_index
+        return convert_table(real_self.move_row(**kwargs))
+    def table_move_column(self, self_obj: Any, from_index: Any = None, to_index: Any = None):
+        real_self = unwrap_table(self_obj)
+        kwargs = {}
+        if from_index is not None: kwargs['from_index'] = from_index
+        if to_index is not None: kwargs['to_index'] = to_index
+        return convert_table(real_self.move_column(**kwargs))
     def sheet_get_table(self, self_obj: Any, name: Any = None):
         real_self = unwrap_sheet(self_obj)
         kwargs = {}
@@ -142,6 +159,33 @@ class WitWorld:
         kwargs = {}
         if schema is not None: kwargs['schema'] = unwrap_parsing_schema(schema)
         return real_self.to_markdown(**kwargs)
+    def sheet_rename(self, self_obj: Any, new_name: Any = None):
+        real_self = unwrap_sheet(self_obj)
+        kwargs = {}
+        if new_name is not None: kwargs['new_name'] = new_name
+        return convert_sheet(real_self.rename(**kwargs))
+    def sheet_add_table(self, self_obj: Any, name: Any = None):
+        real_self = unwrap_sheet(self_obj)
+        kwargs = {}
+        if name is not None: kwargs['name'] = name
+        return convert_sheet(real_self.add_table(**kwargs))
+    def sheet_delete_table(self, self_obj: Any, index: Any = None):
+        real_self = unwrap_sheet(self_obj)
+        kwargs = {}
+        if index is not None: kwargs['index'] = index
+        return convert_sheet(real_self.delete_table(**kwargs))
+    def sheet_replace_table(self, self_obj: Any, index: Any = None, table: Any = None):
+        real_self = unwrap_sheet(self_obj)
+        kwargs = {}
+        if index is not None: kwargs['index'] = index
+        if table is not None: kwargs['table'] = unwrap_table(table)
+        return convert_sheet(real_self.replace_table(**kwargs))
+    def sheet_move_table(self, self_obj: Any, from_index: Any = None, to_index: Any = None):
+        real_self = unwrap_sheet(self_obj)
+        kwargs = {}
+        if from_index is not None: kwargs['from_index'] = from_index
+        if to_index is not None: kwargs['to_index'] = to_index
+        return convert_sheet(real_self.move_table(**kwargs))
     def workbook_get_sheet(self, self_obj: Any, name: Any = None):
         real_self = unwrap_workbook(self_obj)
         kwargs = {}
@@ -162,3 +206,21 @@ class WitWorld:
         kwargs = {}
         if index is not None: kwargs['index'] = index
         return convert_workbook(real_self.delete_sheet(**kwargs))
+    def workbook_move_sheet(self, self_obj: Any, from_index: Any = None, to_index: Any = None):
+        real_self = unwrap_workbook(self_obj)
+        kwargs = {}
+        if from_index is not None: kwargs['from_index'] = from_index
+        if to_index is not None: kwargs['to_index'] = to_index
+        return convert_workbook(real_self.move_sheet(**kwargs))
+    def workbook_replace_sheet(self, self_obj: Any, index: Any = None, sheet: Any = None):
+        real_self = unwrap_workbook(self_obj)
+        kwargs = {}
+        if index is not None: kwargs['index'] = index
+        if sheet is not None: kwargs['sheet'] = unwrap_sheet(sheet)
+        return convert_workbook(real_self.replace_sheet(**kwargs))
+    def workbook_rename_sheet(self, self_obj: Any, index: Any = None, new_name: Any = None):
+        real_self = unwrap_workbook(self_obj)
+        kwargs = {}
+        if index is not None: kwargs['index'] = index
+        if new_name is not None: kwargs['new_name'] = new_name
+        return convert_workbook(real_self.rename_sheet(**kwargs))

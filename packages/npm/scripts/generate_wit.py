@@ -872,6 +872,7 @@ class WitGenerator:
                 # self is implicit in TS
                 args = []
                 call_args = ["this"]  # pass self object to flat function
+                model_arg_conversions = []  # Track model arguments that need toDTO
 
                 for p in m["params"]:
                     if p.name in ("self", "cls"):
@@ -885,7 +886,30 @@ class WitGenerator:
                         sig_param += "?"
 
                     args.append(f"{sig_param}: any")  # TODO specific types
-                    call_args.append(ts_param)
+                    
+                    # Check if argument is a known model type (Table, Sheet, etc.)
+                    if p.annotation:
+                        clean_type = str(p.annotation).strip()
+                        # Remove Optional wrapper
+                        if " | None" in clean_type or "Optional[" in clean_type:
+                            clean_type = (
+                                clean_type.replace(" | None", "").replace("Optional[", "")[:-1]
+                                if "Optional[" in clean_type
+                                else clean_type.replace(" | None", "")
+                            )
+                        clean_type = clean_type.strip("'").strip('"')
+                        
+                        if clean_type in self.discovered_models:
+                            # This is a model argument - add conversion
+                            dto_var = f"{ts_param}Dto"
+                            model_arg_conversions.append(
+                                f"        const {dto_var} = {ts_param} instanceof {clean_type} ? {ts_param}.toDTO() : {ts_param};"
+                            )
+                            call_args.append(dto_var)
+                        else:
+                            call_args.append(ts_param)
+                    else:
+                        call_args.append(ts_param)
 
                 content += f"\n    {mname}({', '.join(args)}): any {{\n"
 
@@ -897,6 +921,10 @@ class WitGenerator:
                 # Use toDTO to handle deep conversion
                 content += "        const dto = this.toDTO();\n"
                 call_args[0] = "dto"
+                
+                # Add model argument conversions
+                for conversion in model_arg_conversions:
+                    content += f"{conversion}\n"
 
                 if class_name == "Table" and mname == "toModels":
                     content += "        const clientRes = clientSideToModels(this.headers, this.rows || [], schemaCls);\n"
