@@ -90,7 +90,7 @@ def generate_table_markdown(
 
     # Append Metadata if present
     if table.metadata and "visual" in table.metadata:
-        metadata_json = json.dumps(table.metadata["visual"])
+        metadata_json = json.dumps(table.metadata["visual"], ensure_ascii=False)
         comment = f"<!-- md-spreadsheet-table-metadata: {metadata_json} -->"
         lines.append("")
         lines.append(comment)
@@ -126,7 +126,7 @@ def generate_sheet_markdown(
     # Append Sheet Metadata if present (at the end)
     if isinstance(schema, MultiTableParsingSchema) and sheet.metadata:
         lines.append("")
-        metadata_json = json.dumps(sheet.metadata)
+        metadata_json = json.dumps(sheet.metadata, ensure_ascii=False)
         comment = f"<!-- md-spreadsheet-sheet-metadata: {metadata_json} -->"
         lines.append(comment)
 
@@ -163,7 +163,7 @@ def generate_workbook_markdown(
         if lines and lines[-1] != "":
             lines.append("")
 
-        metadata_json = json.dumps(workbook.metadata)
+        metadata_json = json.dumps(workbook.metadata, ensure_ascii=False)
         comment = f"<!-- md-spreadsheet-workbook-metadata: {metadata_json} -->"
         lines.append(comment)
 
