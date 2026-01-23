@@ -14,7 +14,18 @@
 </p>
 
 **md-spreadsheet-parser** is a robust Markdown table parser and manipulator for Node.js.
-It is powered by the [Python Core](https://github.com/f-y/md-spreadsheet-parser) compiled to WebAssembly, ensuring 100% logic parity with the Python version while running natively in Node.js.
+It is powered by the [Python Core](https://github.com/f-y/md-spreadsheet-parser) compiled to WebAssembly, while running natively in Node.js.
+
+> **🎉 Official GUI Editor Released: [PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
+>
+> We have transformed this library into an Excel-like interface for VS Code. Edit Markdown tables with sort, filter, and easy navigation directly in your editor.
+>
+> [![Get it on VS Code Marketplace](https://img.shields.io/badge/Get%20it%20on-VS%20Code%20Marketplace-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)
+
+Read in Japanese: 日本語版はこちら(
+<a href="https://github.com/f-y/md-spreadsheet-parser/blob/main/packages/npm/README.ja.md">README</a>
+)
+
 
 ## Features
 
@@ -162,7 +173,7 @@ The following Python features are **not available** in the NPM package:
 |---------|--------|
 | `parse_excel()` / `parseExcel()` | Excel file parsing requires `openpyxl`, which is not compatible with WASM |
 
-For Excel file operations, use the [Python package](https://github.com/f-y/md-spreadsheet-parser) directly.
+For Excel file operations, use the [Python package](https://github.com/f-y/md-spreadsheet-parser) directly, or use text-based operations (like TSV/CSV) as described in the COOKBOOK.
 
 ## Architecture
 

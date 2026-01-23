@@ -27,14 +27,13 @@
 
 **md-spreadsheet-parser** elevates Markdown tables from simple text to first-class data structures. It offers a precise, zero-dependency engine to parse, validate, and manipulate tables with the ease of a spreadsheet and the power of Python.
 
-> [!IMPORTANT]
 > **🎉 Official GUI Editor Released: [PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
 >
 > We have transformed this library into an Excel-like interface for VS Code. Edit Markdown tables with sort, filter, and easy navigation directly in your editor.
 >
 > [![Get it on VS Code Marketplace](https://img.shields.io/badge/Get%20it%20on-VS%20Code%20Marketplace-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)
 
-�🚀 **Need a quick solution?** Check out the [Cookbook](https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.md) for copy-pasteable recipes (Excel conversion, Pandas integration, Markdown table manipulation, and more).
+🚀 **Need a quick solution?** Check out the [Cookbook](https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.md) for copy-pasteable recipes (Excel conversion, Pandas integration, Markdown table manipulation, and more).
 
 Read in Japanese: 日本語版はこちら(
 <a href="https://github.com/f-y/md-spreadsheet-parser/blob/main/README.ja.md">README</a>, <a href="https://github.com/f-y/md-spreadsheet-parser/blob/main/COOKBOOK.ja.md">Cookbook</a>
@@ -790,12 +789,13 @@ new_wb = workbook.delete_sheet(sheet_index=1)
 # Rename sheet (direct method)
 new_sheet = sheet.rename("Q1 Data")
 
-# Update table metadata
-new_sheet = sheet.update_table_metadata(
-    table_index=0, 
-    name="Expenses", 
-    description="Monthly expense report"
-)
+# Update table (get a table and rename it)
+table = sheet.get_table("Q1 Results")
+if table:
+    new_table = table.rename("Old Results")
+    # Replace the table in the sheet
+    new_sheet = sheet.replace_table(0, new_table)
+
 ```
 
 **Table Operations**

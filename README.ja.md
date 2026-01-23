@@ -27,7 +27,6 @@
 
 **md-spreadsheet-parser** は、Markdownのテーブルを単なるテキストからファーストクラスのデータ構造へと昇華させます。スプレッドシートの手軽さとPythonの強力さを兼ね備え、正確かつ依存関係ゼロのエンジンでテーブルの解析、検証、操作を実現します。
 
-> [!IMPORTANT]
 > **🎉 公式GUIエディタが登場: [PengSheets](https://marketplace.visualstudio.com/items?itemName=f-y.peng-sheets)**
 >
 > このライブラリのパワーをそのままに、VS Code上でExcelライクな操作感を実現しました。ソート、フィルタ、快適なナビゲーションなどをGUIで直感的に扱えます。
