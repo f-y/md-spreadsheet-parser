@@ -633,6 +633,10 @@ def parse_workbook(
     # We assume valid markdown structure where root marker is not inside a code block (handled above).
     in_code_block = False
 
+    # Track workbook section end line
+    # If loop breaks due to another H1, end is line before that H1
+    # Otherwise end is the last line of the file
+    workbook_end_line: int | None = None
     for idx, line in enumerate(lines[start_index:], start=start_index):
         stripped = line.strip()
 
@@ -643,6 +647,7 @@ def parse_workbook(
             # Just collect lines if we are in a sheet
             if current_sheet_name:
                 current_sheet_lines.append(line)
+            workbook_end_line = idx + 1  # Track last line in section
             continue
 
         # Check if line is a header
@@ -658,6 +663,7 @@ def parse_workbook(
             # If header level is less than sheet_header_level (e.g. # vs ##),
             # it indicates a higher-level section, so we stop parsing the workbook.
             if level < sheet_header_level:
+                # workbook_end_line is already set to last processed line
                 break
 
         if stripped.startswith(header_prefix):
@@ -682,6 +688,8 @@ def parse_workbook(
             if current_sheet_name:
                 current_sheet_lines.append(line)
 
+        workbook_end_line = idx + 1  # Track last line processed (exclusive end)
+
     if current_sheet_name:
         sheet_content = "\n".join(current_sheet_lines)
         sheets.append(
@@ -693,8 +701,11 @@ def parse_workbook(
             )
         )
 
-    # Calculate workbook end line (last line of content processed)
-    workbook_end_line = len(lines) - 1 if lines else None
+    # If no lines were processed, end_line is start_line + 1
+    if workbook_end_line is None:
+        workbook_end_line = (
+            workbook_start_line + 1 if workbook_start_line is not None else None
+        )
 
     return Workbook(
         sheets=sheets,

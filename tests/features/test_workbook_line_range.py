@@ -2,8 +2,8 @@
 Tests for Workbook.start_line and end_line properties.
 
 These properties track the line positions of the workbook section:
-- start_line: 0-indexed line number where workbook header (e.g., # Tables) starts
-- end_line: 0-indexed line number of the last line in the document
+- start_line: 0-indexed line number where workbook header (e.g., # Tables) starts (inclusive)
+- end_line: 0-indexed line number of workbook section end (exclusive, for use with slice())
 """
 
 from md_spreadsheet_parser import MultiTableParsingSchema, parse_workbook
@@ -163,8 +163,8 @@ No headers here.
 
         assert workbook.start_line is None
 
-    def test_workbook_end_line_is_last_line(self):
-        """end_line should be the last line index of the document."""
+    def test_workbook_end_line_is_exclusive_end(self):
+        """end_line should be exclusive (like slice end, suitable for lines[start:end])."""
         markdown = """# Tables
 
 ## Sheet1
@@ -176,8 +176,8 @@ No headers here.
         workbook = parse_workbook(markdown)
 
         lines = markdown.split("\n")
-        # end_line should be len(lines) - 1 (0-indexed)
-        assert workbook.end_line == len(lines) - 1
+        # end_line should be len(lines) (exclusive end for slice)
+        assert workbook.end_line == len(lines)
 
     def test_h2_marker_line_range(self):
         """H2-level workbook marker should report correct line."""
